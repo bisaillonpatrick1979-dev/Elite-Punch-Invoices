@@ -1,0 +1,32 @@
+.signature-box {
+  display: grid;
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.signature-canvas {
+  width: 100%;
+  min-height: 180px;
+  background: #ffffff;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  touch-action: none;
+}
+
+.signature-preview {
+  display: grid;
+  gap: 10px;
+  margin-top: 14px;
+  padding: 14px;
+  background: var(--surface-strong);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+}
+
+.signature-preview img {
+  max-width: 260px;
+  max-height: 120px;
+  object-fit: contain;
+  background: #ffffff;
+  border-radius: 12px;
+}
