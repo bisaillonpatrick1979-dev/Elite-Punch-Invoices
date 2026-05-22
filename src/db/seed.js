@@ -12,6 +12,18 @@ export const initialSettings = {
     length: "feet-inches",
     area: "square-feet",
     linear: "linear-feet"
+  },
+  billingProfile: {
+    displayName: "",
+    companyName: "",
+    phone: "",
+    email: "",
+    civicAddress: "",
+    taxNumber: "",
+    wcbNumber: "",
+    liabilityInsuranceNumber: "",
+    logoDataUrl: "",
+    logoFileName: ""
   }
 };
 
