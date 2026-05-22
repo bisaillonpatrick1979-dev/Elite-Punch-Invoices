@@ -67,6 +67,18 @@ function addTotalLine(doc, label, value, y, currency, locale, bold = false) {
   doc.text(formatMoney(value || 0, currency, locale), 195, y, { align: "right" });
 }
 
+function addInvoiceNotes(doc, invoice, y) {
+  if (!invoice.notes) return y;
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(10);
+  doc.text("Notes", 14, y);
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(9);
+  const lines = doc.splitTextToSize(String(invoice.notes), 108);
+  doc.text(lines, 14, y + 6);
+  return y + 8 + lines.length * 4;
+}
+
 export function downloadInvoicePdf({ invoice, settings }) {
   const doc = new jsPDF({ unit: "mm", format: "letter" });
   const billingProfile = settings?.billingProfile || {};
@@ -131,11 +143,17 @@ export function downloadInvoicePdf({ invoice, settings }) {
     y += 6;
   }
 
+  if (Number(totals.paidAmount || 0) > 0) {
+    addTotalLine(doc, "Paid", -(totals.paidAmount || 0), y, currency, locale);
+    y += 6;
+  }
+
   y += 2;
   addTotalLine(doc, "Total", totals.total, y, currency, locale, true);
   y += 7;
   addTotalLine(doc, "Balance due", totals.balanceDue, y, currency, locale, true);
 
+  addInvoiceNotes(doc, invoice, Math.max(y + 12, 205));
   addSignature(doc, billingProfile, locale);
   doc.save(`${safeText(invoice.invoiceNumber, "invoice")}.pdf`);
 }
