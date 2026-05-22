@@ -5,6 +5,7 @@ export const fr = {
     punch: "Punch",
     calendar: "Calendrier",
     invoices: "Factures",
+    clients: "Clients",
     employees: "Employes",
     payroll: "Payes",
     catalog: "Catalogue",
