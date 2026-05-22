@@ -92,11 +92,18 @@ export function downloadInvoicePdf({ invoice, settings }) {
   doc.text("Bill to", 14, 62);
   doc.setFont("helvetica", "normal");
   doc.setFontSize(10);
-  doc.text(safeText(invoice.clientName, "No client"), 14, 69);
-  doc.text(safeText(invoice.jobAddress, "No job address"), 14, 75);
+
+  const clientLines = [
+    safeText(invoice.clientName, "No client"),
+    safeText(invoice.jobAddress, "No job address"),
+    invoice.clientPhone ? `Phone: ${invoice.clientPhone}` : "",
+    invoice.clientEmail ? `Email: ${invoice.clientEmail}` : ""
+  ].filter(Boolean);
+
+  clientLines.forEach((line, index) => doc.text(line, 14, 69 + index * 5));
 
   autoTable(doc, {
-    startY: 88,
+    startY: 94,
     head: [["Description", "Qty", "Unit", "Rate", "Total"]],
     body: (invoice.lines || []).map((line) => [safeText(line.description), Number(line.quantity || 0).toFixed(2), safeText(line.unit), formatMoney(line.rate || 0, currency, locale), formatMoney(line.total || 0, currency, locale)]),
     styles: { font: "helvetica", fontSize: 9, cellPadding: 3 },
