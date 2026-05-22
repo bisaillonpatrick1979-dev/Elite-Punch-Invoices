@@ -46,6 +46,28 @@ function addBillingHeader(doc, billingProfile = {}) {
   });
 }
 
+function addSignature(doc, billingProfile = {}, locale = "fr-CA") {
+  const signatureY = 232;
+
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(9);
+  doc.text("Signature", 120, signatureY);
+
+  if (billingProfile.signatureDataUrl) {
+    try {
+      doc.addImage(billingProfile.signatureDataUrl, "PNG", 120, signatureY + 3, 62, 24, undefined, "FAST");
+    } catch (error) {
+      console.warn("Unable to render signature", error);
+      doc.text("______________________________", 120, signatureY + 16);
+    }
+  } else {
+    doc.text("______________________________", 120, signatureY + 16);
+  }
+
+  const signatureDate = billingProfile.signatureDate || new Date().toISOString();
+  doc.text(`Date: ${formatDate(signatureDate, locale)}`, 120, signatureY + 34);
+}
+
 export function downloadInvoicePdf({ invoice, settings }) {
   const doc = new jsPDF({ unit: "mm", format: "letter" });
   const billingProfile = settings?.billingProfile || {};
@@ -118,10 +140,7 @@ export function downloadInvoicePdf({ invoice, settings }) {
   doc.text("Balance due", totalsX, y);
   doc.text(formatMoney(totals.balanceDue || 0, currency, locale), 195, y, { align: "right" });
 
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(9);
-  doc.text("Signature: ______________________________", 120, 245);
-  doc.text(`Date: ${formatDate(new Date().toISOString(), locale)}`, 120, 252);
+  addSignature(doc, billingProfile, locale);
 
   const fileName = `${safeText(invoice.invoiceNumber, "invoice")}.pdf`;
   doc.save(fileName);
