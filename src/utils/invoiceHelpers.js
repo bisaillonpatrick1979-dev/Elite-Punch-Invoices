@@ -39,8 +39,13 @@ export function recalculateInvoice(invoice, taxes) {
   const totals = calculateInvoiceTotals({
     lines: invoice.lines || [],
     discountAmount: invoice.discountAmount || 0,
+    discountEnabled: invoice.discountEnabled || false,
+    discountType: invoice.discountType || "amount",
+    discountValue: invoice.discountValue || 0,
     advanceAmount: invoice.advanceAmount || 0,
+    advanceEnabled: invoice.advanceEnabled || false,
     paidAmount: invoice.paidAmount || 0,
+    taxEnabled: invoice.taxEnabled !== false,
     taxes
   });
 
@@ -101,7 +106,12 @@ export function buildInvoicesFromPunches({ punches = [], invoices = [], taxes = 
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
         lines: [line],
+        taxEnabled: true,
+        discountEnabled: false,
+        discountType: "amount",
+        discountValue: 0,
         discountAmount: 0,
+        advanceEnabled: false,
         advanceAmount: 0,
         paidAmount: 0,
         notes: ""
