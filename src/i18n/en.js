@@ -3,6 +3,7 @@ export const en = {
   tabs: {
     dashboard: "Home",
     punch: "Punch",
+    calendar: "Calendar",
     invoices: "Invoices",
     employees: "Employees",
     payroll: "Payroll",
@@ -15,6 +16,6 @@ export const en = {
   common: {
     baseReady: "Base ready",
     moduleReady: "Basic module ready",
-    comingSoon: "Features coming in a future step"
+    comingSoon: "Coming soon"
   }
 };
