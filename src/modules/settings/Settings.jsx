@@ -1,4 +1,6 @@
+import SignaturePad from "../../components/SignaturePad.jsx";
 import { useAppData } from "../../context/AppDataContext.jsx";
+import { formatDate } from "../../utils/dates.js";
 
 function getBillingProfile(settings) {
   return settings.billingProfile || {
@@ -11,7 +13,9 @@ function getBillingProfile(settings) {
     wcbNumber: "",
     liabilityInsuranceNumber: "",
     logoDataUrl: "",
-    logoFileName: ""
+    logoFileName: "",
+    signatureDataUrl: "",
+    signatureDate: ""
   };
 }
 
@@ -62,12 +66,31 @@ export default function Settings() {
     updateBillingField("logoFileName", "");
   };
 
+  const saveSignature = (signatureDataUrl) => {
+    updateAppData((currentData) => ({
+      ...currentData,
+      settings: {
+        ...currentData.settings,
+        billingProfile: {
+          ...getBillingProfile(currentData.settings),
+          signatureDataUrl,
+          signatureDate: new Date().toISOString()
+        }
+      }
+    }));
+  };
+
+  const clearSignature = () => {
+    updateBillingField("signatureDataUrl", "");
+    updateBillingField("signatureDate", "");
+  };
+
   return (
     <section className="module-page">
       <div className="hero-card">
         <span className="status-pill">Data ready</span>
         <h2>Settings</h2>
-        <p>Company, billing profile, logo watermark and local defaults.</p>
+        <p>Company, billing profile, logo watermark, tactile signature and local defaults.</p>
       </div>
 
       <div className="info-card">
@@ -131,6 +154,19 @@ export default function Settings() {
             <p>No logo saved yet.</p>
           )}
         </div>
+      </div>
+
+      <div className="info-card">
+        <h2>Signature</h2>
+        <p>This signature will appear at the bottom right of invoice PDFs.</p>
+        <SignaturePad onSave={saveSignature} />
+        {billingProfile.signatureDataUrl && (
+          <div className="signature-preview">
+            <img src={billingProfile.signatureDataUrl} alt="Saved signature" />
+            <p>Saved: {formatDate(billingProfile.signatureDate, settings.locale, settings.timeZone)}</p>
+            <button className="secondary-action" type="button" onClick={clearSignature}>Remove signature</button>
+          </div>
+        )}
       </div>
 
       <div className="info-card">
