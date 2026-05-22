@@ -35,20 +35,13 @@ export default function Invoices() {
   const updateCatalogForm = (invoiceId, field, value) => {
     setCatalogForms((current) => ({
       ...current,
-      [invoiceId]: {
-        itemId: "",
-        quantity: "1",
-        customDescription: "",
-        ...(current[invoiceId] || {}),
-        [field]: value
-      }
+      [invoiceId]: { itemId: "", quantity: "1", customDescription: "", ...(current[invoiceId] || {}), [field]: value }
     }));
   };
 
   const addCatalogLine = (invoiceId) => {
     const form = catalogForms[invoiceId] || { itemId: "", quantity: "1", customDescription: "" };
     const item = catalogItems.find((catalogItem) => catalogItem.id === form.itemId) || catalogItems[0];
-
     if (!item) return;
 
     const quantity = Number(form.quantity || 1);
@@ -67,9 +60,7 @@ export default function Invoices() {
 
     updateAppData((currentData) => ({
       ...currentData,
-      invoices: (currentData.invoices || []).map((invoice) =>
-        invoice.id === invoiceId ? recalc({ ...invoice, lines: [...(invoice.lines || []), line] }, currentData) : invoice
-      )
+      invoices: (currentData.invoices || []).map((invoice) => invoice.id === invoiceId ? recalc({ ...invoice, lines: [...(invoice.lines || []), line] }, currentData) : invoice)
     }));
 
     setCatalogForms((current) => ({ ...current, [invoiceId]: { itemId: "", quantity: "1", customDescription: "" } }));
@@ -78,9 +69,7 @@ export default function Invoices() {
   const removeLine = (invoiceId, lineId) => {
     updateAppData((currentData) => ({
       ...currentData,
-      invoices: (currentData.invoices || []).map((invoice) =>
-        invoice.id === invoiceId ? recalc({ ...invoice, lines: (invoice.lines || []).filter((line) => line.id !== lineId) }, currentData) : invoice
-      )
+      invoices: (currentData.invoices || []).map((invoice) => invoice.id === invoiceId ? recalc({ ...invoice, lines: (invoice.lines || []).filter((line) => line.id !== lineId) }, currentData) : invoice)
     }));
   };
 
@@ -89,7 +78,7 @@ export default function Invoices() {
       <div className="hero-card">
         <span className="status-pill">Invoices</span>
         <h2>Open invoices</h2>
-        <p>Create or update open invoices from completed punches, add catalog items, then export a PDF.</p>
+        <p>Create or update open invoices from completed punches, edit details, add catalog items, then export a PDF.</p>
         <div className="action-row"><button className="primary-action" type="button" onClick={createOrUpdateOpenInvoices}>Add punches to invoices</button></div>
         <div className="mini-stats"><span>{uninvoicedPunches.length} uninvoiced punches</span><span>{invoices.length} invoices</span></div>
       </div>
@@ -108,6 +97,18 @@ export default function Invoices() {
                 </div>
 
                 <div className="mini-stats"><span>Created {formatDate(invoice.createdAt)}</span><span>{(invoice.lines || []).length} lines</span><span>Total {money(totals.total || 0)}</span><span>Balance {money(totals.balanceDue || 0)}</span></div>
+
+                <div className="info-card nested-card">
+                  <h2>Invoice details</h2>
+                  <div className="form-grid">
+                    <label className="field"><span>Client name</span><input value={invoice.clientName || ""} onChange={(event) => updateInvoiceField(invoice.id, "clientName", event.target.value)} /></label>
+                    <label className="field"><span>Job address</span><input value={invoice.jobAddress || ""} onChange={(event) => updateInvoiceField(invoice.id, "jobAddress", event.target.value)} /></label>
+                    <label className="field"><span>Client phone</span><input value={invoice.clientPhone || ""} onChange={(event) => updateInvoiceField(invoice.id, "clientPhone", event.target.value)} /></label>
+                    <label className="field"><span>Client email</span><input value={invoice.clientEmail || ""} onChange={(event) => updateInvoiceField(invoice.id, "clientEmail", event.target.value)} /></label>
+                    <label className="field"><span>Paid amount</span><input type="number" min="0" step="0.01" value={invoice.paidAmount || 0} onChange={(event) => updateInvoiceField(invoice.id, "paidAmount", Number(event.target.value || 0))} /></label>
+                    <label className="field field-full"><span>Invoice notes</span><textarea rows="3" value={invoice.notes || ""} onChange={(event) => updateInvoiceField(invoice.id, "notes", event.target.value)} /></label>
+                  </div>
+                </div>
 
                 <div className="form-grid invoice-options">
                   <label className="field"><span>Tax</span><select value={invoice.taxEnabled === false ? "off" : "on"} onChange={(event) => updateInvoiceField(invoice.id, "taxEnabled", event.target.value === "on")}><option value="on">Tax ON</option><option value="off">Tax OFF</option></select></label>
@@ -139,7 +140,9 @@ export default function Invoices() {
                   {invoice.discountEnabled && <span>Discount: -{money(totals.discount || 0)}</span>}
                   {invoice.taxEnabled !== false && <span>Tax: {money(totals.taxAmount || 0)}</span>}
                   {invoice.advanceEnabled && <span>Advance: -{money(totals.advance || 0)}</span>}
+                  <span>Paid: {money(totals.paidAmount || 0)}</span>
                   <strong>Total: {money(totals.total || 0)}</strong>
+                  <strong>Balance: {money(totals.balanceDue || 0)}</strong>
                 </div>
                 <div className="action-row"><button className="secondary-action" type="button" onClick={() => downloadInvoicePdf({ invoice, settings })}>Download PDF</button></div>
               </div>
