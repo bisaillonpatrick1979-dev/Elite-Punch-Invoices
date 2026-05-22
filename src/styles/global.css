@@ -61,12 +61,18 @@ h1 {
   letter-spacing: -0.06em;
 }
 
+.top-controls {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+  min-width: 142px;
+}
+
 .theme-picker {
   display: grid;
   gap: 6px;
-  min-width: 138px;
   color: var(--muted);
-  font-size: 0.75rem;
+  font-size: 0.72rem;
   font-weight: 700;
 }
 
@@ -236,6 +242,19 @@ h1 {
 }
 
 @media (max-width: 390px) {
+  .app-header {
+    gap: 10px;
+  }
+
+  .top-controls {
+    min-width: 116px;
+  }
+
+  .theme-picker select {
+    min-height: 38px;
+    padding: 0 8px;
+  }
+
   .tab-label {
     font-size: 0.54rem;
   }
@@ -252,6 +271,11 @@ h1 {
 
   .card-grid {
     grid-template-columns: repeat(2, 1fr);
+  }
+
+  .top-controls {
+    grid-template-columns: 96px 170px;
+    align-items: end;
   }
 
   .tab-label {
