@@ -3,6 +3,7 @@ export const fr = {
   tabs: {
     dashboard: "Accueil",
     punch: "Punch",
+    calendar: "Calendrier",
     invoices: "Factures",
     employees: "Employes",
     payroll: "Payes",
