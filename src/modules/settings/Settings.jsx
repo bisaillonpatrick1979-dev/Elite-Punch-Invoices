@@ -1,3 +1,5 @@
+import { useState } from "react";
+
 import SignaturePad from "../../components/SignaturePad.jsx";
 import { useAppData } from "../../context/AppDataContext.jsx";
 import { createBackupFileName, exportBackupJson, parseBackupJson } from "../../db/backup.js";
@@ -22,18 +24,17 @@ function getBillingProfile(settings) {
 
 export default function Settings() {
   const { appData, setAppData, updateAppData } = useAppData();
+  const [taxForm, setTaxForm] = useState({ name: "", rate: "5" });
   const settings = appData.settings;
   const billingProfile = getBillingProfile(settings);
+  const taxes = settings.taxProfile?.taxes || [];
 
   const updateBillingField = (field, value) => {
     updateAppData((currentData) => ({
       ...currentData,
       settings: {
         ...currentData.settings,
-        billingProfile: {
-          ...getBillingProfile(currentData.settings),
-          [field]: value
-        }
+        billingProfile: { ...getBillingProfile(currentData.settings), [field]: value }
       }
     }));
   };
@@ -47,11 +48,7 @@ export default function Settings() {
         ...currentData,
         settings: {
           ...currentData.settings,
-          billingProfile: {
-            ...getBillingProfile(currentData.settings),
-            logoDataUrl: reader.result,
-            logoFileName: file.name
-          }
+          billingProfile: { ...getBillingProfile(currentData.settings), logoDataUrl: reader.result, logoFileName: file.name }
         }
       }));
     };
@@ -68,11 +65,7 @@ export default function Settings() {
       ...currentData,
       settings: {
         ...currentData.settings,
-        billingProfile: {
-          ...getBillingProfile(currentData.settings),
-          signatureDataUrl,
-          signatureDate: new Date().toISOString()
-        }
+        billingProfile: { ...getBillingProfile(currentData.settings), signatureDataUrl, signatureDate: new Date().toISOString() }
       }
     }));
   };
@@ -80,6 +73,43 @@ export default function Settings() {
   const clearSignature = () => {
     updateBillingField("signatureDataUrl", "");
     updateBillingField("signatureDate", "");
+  };
+
+  const updateTax = (taxId, field, value) => {
+    updateAppData((currentData) => ({
+      ...currentData,
+      settings: {
+        ...currentData.settings,
+        taxProfile: {
+          ...(currentData.settings.taxProfile || {}),
+          taxes: (currentData.settings.taxProfile?.taxes || []).map((tax) => tax.id === taxId ? { ...tax, [field]: value } : tax)
+        }
+      }
+    }));
+  };
+
+  const addTax = () => {
+    const name = taxForm.name.trim();
+    if (!name) return;
+    const newTax = { id: `tax-${Date.now()}`, name, rate: Number(taxForm.rate || 0) / 100, enabled: true };
+    updateAppData((currentData) => ({
+      ...currentData,
+      settings: {
+        ...currentData.settings,
+        taxProfile: { ...(currentData.settings.taxProfile || {}), taxes: [...(currentData.settings.taxProfile?.taxes || []), newTax] }
+      }
+    }));
+    setTaxForm({ name: "", rate: "5" });
+  };
+
+  const removeTax = (taxId) => {
+    updateAppData((currentData) => ({
+      ...currentData,
+      settings: {
+        ...currentData.settings,
+        taxProfile: { ...(currentData.settings.taxProfile || {}), taxes: (currentData.settings.taxProfile?.taxes || []).filter((tax) => tax.id !== taxId) }
+      }
+    }));
   };
 
   const downloadBackup = () => {
@@ -99,8 +129,7 @@ export default function Settings() {
     const reader = new FileReader();
     reader.onload = () => {
       try {
-        const importedData = parseBackupJson(String(reader.result));
-        setAppData(importedData);
+        setAppData(parseBackupJson(String(reader.result)));
       } catch (error) {
         alert("Invalid backup file");
       }
@@ -113,7 +142,7 @@ export default function Settings() {
       <div className="hero-card">
         <span className="status-pill">Data ready</span>
         <h2>Settings</h2>
-        <p>Company, billing profile, logo watermark, tactile signature, backup and local defaults.</p>
+        <p>Company, taxes, billing profile, logo watermark, tactile signature, backup and local defaults.</p>
       </div>
 
       <div className="info-card">
@@ -133,6 +162,29 @@ export default function Settings() {
         <div className="logo-preview">
           {billingProfile.logoDataUrl ? <><img src={billingProfile.logoDataUrl} alt="Billing logo preview" /><div className="action-row"><button className="secondary-action" type="button" onClick={clearLogo}>Remove logo</button></div></> : <p>No logo saved yet.</p>}
         </div>
+      </div>
+
+      <div className="info-card">
+        <h2>Taxes</h2>
+        <p>Default for Alberta is GST 5%. Add more taxes for other provinces or jobs.</p>
+        <div className="simple-list">
+          {taxes.map((tax) => (
+            <div className="list-item" key={tax.id}>
+              <strong>{tax.name}</strong>
+              <div className="form-grid">
+                <label className="field"><span>Name</span><input value={tax.name} onChange={(event) => updateTax(tax.id, "name", event.target.value)} /></label>
+                <label className="field"><span>Rate %</span><input type="number" min="0" step="0.001" value={Number(tax.rate || 0) * 100} onChange={(event) => updateTax(tax.id, "rate", Number(event.target.value || 0) / 100)} /></label>
+                <label className="field"><span>Status</span><select value={tax.enabled ? "on" : "off"} onChange={(event) => updateTax(tax.id, "enabled", event.target.value === "on")}><option value="on">Enabled</option><option value="off">Disabled</option></select></label>
+              </div>
+              <button className="secondary-action" type="button" onClick={() => removeTax(tax.id)}>Remove tax</button>
+            </div>
+          ))}
+        </div>
+        <div className="form-grid">
+          <label className="field"><span>New tax name</span><input value={taxForm.name} onChange={(event) => setTaxForm((current) => ({ ...current, name: event.target.value }))} /></label>
+          <label className="field"><span>New tax rate %</span><input type="number" min="0" step="0.001" value={taxForm.rate} onChange={(event) => setTaxForm((current) => ({ ...current, rate: event.target.value }))} /></label>
+        </div>
+        <div className="action-row"><button className="secondary-action" type="button" onClick={addTax}>Add tax</button></div>
       </div>
 
       <div className="info-card">
