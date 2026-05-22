@@ -1,4 +1,5 @@
 import { useAppData } from "../../context/AppDataContext.jsx";
+import { downloadInvoicePdf } from "../../pdf/invoicePdf.js";
 import { buildInvoicesFromPunches, INVOICE_STATUSES, recalculateInvoice } from "../../utils/invoiceHelpers.js";
 import { formatMoney } from "../../utils/money.js";
 import { formatDate } from "../../utils/dates.js";
@@ -16,7 +17,6 @@ const statusLabels = {
 export default function Invoices() {
   const { appData, updateAppData } = useAppData();
   const settings = appData.settings || {};
-  const taxes = settings.taxProfile?.taxes || [];
   const invoices = appData.invoices || [];
   const uninvoicedPunches = (appData.punches || []).filter(
     (punch) => !punch.invoiceStatus || punch.invoiceStatus === "not_invoiced"
@@ -49,14 +49,16 @@ export default function Invoices() {
     }));
   };
 
+  const handleDownloadPdf = (invoice) => {
+    downloadInvoicePdf({ invoice, settings });
+  };
+
   return (
     <section className="module-page">
       <div className="hero-card">
         <span className="status-pill">Invoices</span>
         <h2>Open invoices</h2>
-        <p>
-          Create or update open invoices from completed punches. PDF export will be connected later.
-        </p>
+        <p>Create or update open invoices from completed punches, then export a simple PDF.</p>
 
         <div className="action-row">
           <button className="primary-action" type="button" onClick={createOrUpdateOpenInvoices}>
@@ -119,6 +121,12 @@ export default function Invoices() {
                   <span>Subtotal: {formatMoney(totals.subtotal || 0, invoice.currency || settings.currency || "CAD", settings.locale || "fr-CA")}</span>
                   <span>Tax: {formatMoney(totals.taxAmount || 0, invoice.currency || settings.currency || "CAD", settings.locale || "fr-CA")}</span>
                   <strong>Total: {formatMoney(totals.total || 0, invoice.currency || settings.currency || "CAD", settings.locale || "fr-CA")}</strong>
+                </div>
+
+                <div className="action-row">
+                  <button className="secondary-action" type="button" onClick={() => handleDownloadPdf(invoice)}>
+                    Download PDF
+                  </button>
                 </div>
               </div>
             );
