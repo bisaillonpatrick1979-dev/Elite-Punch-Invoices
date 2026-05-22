@@ -23,7 +23,9 @@ export const initialSettings = {
     wcbNumber: "",
     liabilityInsuranceNumber: "",
     logoDataUrl: "",
-    logoFileName: ""
+    logoFileName: "",
+    signatureDataUrl: "",
+    signatureDate: ""
   }
 };
 
