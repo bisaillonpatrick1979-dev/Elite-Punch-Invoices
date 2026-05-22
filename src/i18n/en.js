@@ -5,6 +5,7 @@ export const en = {
     punch: "Punch",
     calendar: "Calendar",
     invoices: "Invoices",
+    clients: "Clients",
     employees: "Employees",
     payroll: "Payroll",
     catalog: "Catalog",
