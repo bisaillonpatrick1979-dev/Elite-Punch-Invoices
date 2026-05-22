@@ -5,6 +5,7 @@ import { getTranslations } from "./i18n/index.js";
 
 import Dashboard from "./modules/dashboard/Dashboard.jsx";
 import Punch from "./modules/punch/Punch.jsx";
+import Calendar from "./modules/calendar/Calendar.jsx";
 import Invoices from "./modules/invoices/Invoices.jsx";
 import Employees from "./modules/employees/Employees.jsx";
 import Payroll from "./modules/payroll/Payroll.jsx";
@@ -15,6 +16,7 @@ import Settings from "./modules/settings/Settings.jsx";
 const tabs = [
   { id: "dashboard", icon: "⌂", component: Dashboard },
   { id: "punch", icon: "⏱", component: Punch },
+  { id: "calendar", icon: "▣", component: Calendar },
   { id: "invoices", icon: "▤", component: Invoices },
   { id: "employees", icon: "👷", component: Employees },
   { id: "payroll", icon: "$", component: Payroll },
