@@ -9,10 +9,7 @@ function safeText(value, fallback = "") {
 }
 
 function addWatermarkLogo(doc, logoDataUrl) {
-  if (!logoDataUrl) {
-    return;
-  }
-
+  if (!logoDataUrl) return;
   try {
     doc.setGState(new doc.GState({ opacity: 0.08 }));
     doc.addImage(logoDataUrl, "PNG", 45, 92, 120, 80, undefined, "FAST");
@@ -24,11 +21,9 @@ function addWatermarkLogo(doc, logoDataUrl) {
 
 function addBillingHeader(doc, billingProfile = {}) {
   const billingName = billingProfile.companyName || billingProfile.displayName || "Billing profile missing";
-
   doc.setFont("helvetica", "bold");
   doc.setFontSize(18);
   doc.text(billingName, 14, 18);
-
   doc.setFont("helvetica", "normal");
   doc.setFontSize(9);
 
@@ -41,14 +36,11 @@ function addBillingHeader(doc, billingProfile = {}) {
     billingProfile.liabilityInsuranceNumber ? `Insurance: ${billingProfile.liabilityInsuranceNumber}` : ""
   ].filter(Boolean);
 
-  lines.slice(0, 6).forEach((line, index) => {
-    doc.text(String(line), 14, 25 + index * 5);
-  });
+  lines.slice(0, 6).forEach((line, index) => doc.text(String(line), 14, 25 + index * 5));
 }
 
 function addSignature(doc, billingProfile = {}, locale = "fr-CA") {
   const signatureY = 232;
-
   doc.setFont("helvetica", "normal");
   doc.setFontSize(9);
   doc.text("Signature", 120, signatureY);
@@ -66,6 +58,13 @@ function addSignature(doc, billingProfile = {}, locale = "fr-CA") {
 
   const signatureDate = billingProfile.signatureDate || new Date().toISOString();
   doc.text(`Date: ${formatDate(signatureDate, locale)}`, 120, signatureY + 34);
+}
+
+function addTotalLine(doc, label, value, y, currency, locale, bold = false) {
+  doc.setFont("helvetica", bold ? "bold" : "normal");
+  doc.setFontSize(bold ? 12 : 10);
+  doc.text(label, 135, y);
+  doc.text(formatMoney(value || 0, currency, locale), 195, y, { align: "right" });
 }
 
 export function downloadInvoicePdf({ invoice, settings }) {
@@ -91,7 +90,6 @@ export function downloadInvoicePdf({ invoice, settings }) {
   doc.setFont("helvetica", "bold");
   doc.setFontSize(11);
   doc.text("Bill to", 14, 62);
-
   doc.setFont("helvetica", "normal");
   doc.setFontSize(10);
   doc.text(safeText(invoice.clientName, "No client"), 14, 69);
@@ -100,48 +98,37 @@ export function downloadInvoicePdf({ invoice, settings }) {
   autoTable(doc, {
     startY: 88,
     head: [["Description", "Qty", "Unit", "Rate", "Total"]],
-    body: (invoice.lines || []).map((line) => [
-      safeText(line.description),
-      Number(line.quantity || 0).toFixed(2),
-      safeText(line.unit),
-      formatMoney(line.rate || 0, currency, locale),
-      formatMoney(line.total || 0, currency, locale)
-    ]),
-    styles: {
-      font: "helvetica",
-      fontSize: 9,
-      cellPadding: 3
-    },
-    headStyles: {
-      fillColor: [20, 20, 20],
-      textColor: [255, 255, 255]
-    }
+    body: (invoice.lines || []).map((line) => [safeText(line.description), Number(line.quantity || 0).toFixed(2), safeText(line.unit), formatMoney(line.rate || 0, currency, locale), formatMoney(line.total || 0, currency, locale)]),
+    styles: { font: "helvetica", fontSize: 9, cellPadding: 3 },
+    headStyles: { fillColor: [20, 20, 20], textColor: [255, 255, 255] }
   });
 
   const finalY = doc.lastAutoTable?.finalY || 100;
-  const totalsX = 135;
   let y = finalY + 10;
 
-  doc.setFontSize(10);
-  doc.text("Subtotal", totalsX, y);
-  doc.text(formatMoney(totals.subtotal || 0, currency, locale), 195, y, { align: "right" });
-
+  addTotalLine(doc, "Subtotal", totals.subtotal, y, currency, locale);
   y += 6;
-  doc.text("Tax", totalsX, y);
-  doc.text(formatMoney(totals.taxAmount || 0, currency, locale), 195, y, { align: "right" });
 
-  y += 8;
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(12);
-  doc.text("Total", totalsX, y);
-  doc.text(formatMoney(totals.total || 0, currency, locale), 195, y, { align: "right" });
+  if (invoice.discountEnabled) {
+    addTotalLine(doc, "Discount", -(totals.discount || 0), y, currency, locale);
+    y += 6;
+  }
 
+  if (invoice.taxEnabled !== false) {
+    addTotalLine(doc, "Tax", totals.taxAmount, y, currency, locale);
+    y += 6;
+  }
+
+  if (invoice.advanceEnabled) {
+    addTotalLine(doc, "Advance / deposit", -(totals.advance || 0), y, currency, locale);
+    y += 6;
+  }
+
+  y += 2;
+  addTotalLine(doc, "Total", totals.total, y, currency, locale, true);
   y += 7;
-  doc.text("Balance due", totalsX, y);
-  doc.text(formatMoney(totals.balanceDue || 0, currency, locale), 195, y, { align: "right" });
+  addTotalLine(doc, "Balance due", totals.balanceDue, y, currency, locale, true);
 
   addSignature(doc, billingProfile, locale);
-
-  const fileName = `${safeText(invoice.invoiceNumber, "invoice")}.pdf`;
-  doc.save(fileName);
+  doc.save(`${safeText(invoice.invoiceNumber, "invoice")}.pdf`);
 }
