@@ -56,36 +56,34 @@ export function recalculateInvoice(invoice, taxes) {
   };
 }
 
+function applyPunchClientInfo(invoice, punch) {
+  return {
+    ...invoice,
+    clientId: invoice.clientId || punch.clientId || "",
+    clientName: invoice.clientName || punch.clientName || "No client",
+    clientPhone: invoice.clientPhone || punch.clientPhone || "",
+    clientEmail: invoice.clientEmail || punch.clientEmail || "",
+    jobAddress: invoice.jobAddress || punch.jobAddress || punch.jobName || "No address"
+  };
+}
+
 export function buildInvoicesFromPunches({ punches = [], invoices = [], taxes = [] }) {
   let nextInvoices = [...invoices];
   const updatedPunches = punches.map((punch) => ({ ...punch }));
 
   updatedPunches.forEach((punch) => {
-    if (punch.invoiceStatus && punch.invoiceStatus !== "not_invoiced") {
-      return;
-    }
+    if (punch.invoiceStatus && punch.invoiceStatus !== "not_invoiced") return;
 
     const groupKey = getInvoiceGroupKey(punch);
-    const existingIndex = nextInvoices.findIndex(
-      (invoice) => invoice.groupKey === groupKey && invoice.status === INVOICE_STATUSES.OPEN
-    );
-
+    const existingIndex = nextInvoices.findIndex((invoice) => invoice.groupKey === groupKey && invoice.status === INVOICE_STATUSES.OPEN);
     const line = createInvoiceLineFromPunch(punch);
 
     if (existingIndex >= 0) {
-      const existingInvoice = nextInvoices[existingIndex];
+      const existingInvoice = applyPunchClientInfo(nextInvoices[existingIndex], punch);
       const hasLine = (existingInvoice.lines || []).some((item) => item.sourceId === punch.id);
 
       if (!hasLine) {
-        const updatedInvoice = recalculateInvoice(
-          {
-            ...existingInvoice,
-            lines: [...(existingInvoice.lines || []), line]
-          },
-          taxes
-        );
-
-        nextInvoices[existingIndex] = updatedInvoice;
+        nextInvoices[existingIndex] = recalculateInvoice({ ...existingInvoice, lines: [...(existingInvoice.lines || []), line] }, taxes);
       }
 
       punch.invoiceStatus = "on_open_invoice";
@@ -100,7 +98,10 @@ export function buildInvoicesFromPunches({ punches = [], invoices = [], taxes = 
         invoiceNumber: `EPI-${new Date().getFullYear()}-${String(nextInvoices.length + 1).padStart(4, "0")}`,
         groupKey,
         status: INVOICE_STATUSES.OPEN,
+        clientId: punch.clientId || "",
         clientName: punch.clientName || "No client",
+        clientPhone: punch.clientPhone || "",
+        clientEmail: punch.clientEmail || "",
         jobAddress: punch.jobAddress || punch.jobName || "No address",
         currency: "CAD",
         createdAt: new Date().toISOString(),
@@ -124,8 +125,5 @@ export function buildInvoicesFromPunches({ punches = [], invoices = [], taxes = 
     punch.linkedInvoiceId = invoiceId;
   });
 
-  return {
-    invoices: nextInvoices,
-    punches: updatedPunches
-  };
+  return { invoices: nextInvoices, punches: updatedPunches };
 }
