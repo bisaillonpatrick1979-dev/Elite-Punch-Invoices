@@ -1,0 +1,34 @@
+.invoice-card-header {
+  display: grid;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.compact-field {
+  min-width: 150px;
+}
+
+.invoice-totals {
+  display: grid;
+  gap: 8px;
+  margin-top: 14px;
+  padding: 14px;
+  background: var(--surface-strong);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+}
+
+.invoice-totals span,
+.invoice-totals strong {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  color: var(--text);
+}
+
+@media (min-width: 720px) {
+  .invoice-card-header {
+    grid-template-columns: 1fr auto;
+    align-items: start;
+  }
+}
