@@ -89,7 +89,7 @@ export default function App() {
         <div><p className="eyebrow">Elite Punch Invoice</p><h1>{currentLabel}</h1></div>
         <div className="top-controls compact-controls"><button className="secondary-action" type="button" onClick={logout}>Sortir</button><label className="theme-picker"><span>{t.language}</span><select value={language} onChange={(event) => setLanguage(event.target.value)}><option value="fr">FR</option><option value="en">EN</option></select></label><label className="theme-picker"><span>{t.theme}</span><select value={theme} onChange={(event) => setTheme(event.target.value)}>{themes.map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}</select></label></div>
       </header>
-      <main className="app-main"><AppStatus /><ActiveComponent t={t} language={language} /></main>
+      <main className="app-main"><AppStatus /><ActiveComponent t={t} language={language} onNavigate={setActiveTab} /></main>
       <nav className="bottom-tabs scroll-tabs" aria-label="Navigation principale">{tabs.map((tab) => { const isActive = tab.id === currentTab.id; const label = getTabLabel(tab, t); return <button key={tab.id} type="button" className={isActive ? "tab-button active" : "tab-button"} onClick={() => setActiveTab(tab.id)} aria-current={isActive ? "page" : undefined}><span className="tab-icon">{tab.icon}</span><span className="tab-label">{label}</span></button>; })}</nav>
     </div>
   );
