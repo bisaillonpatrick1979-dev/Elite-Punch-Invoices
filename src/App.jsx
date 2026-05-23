@@ -16,6 +16,7 @@ import Payroll from "./modules/payroll/Payroll.jsx";
 import Catalog from "./modules/catalog/Catalog.jsx";
 import Accounting from "./modules/accounting/Accounting.jsx";
 import Settings from "./modules/settings/Settings.jsx";
+import DevTools from "./modules/devtools/DevTools.jsx";
 import EntryGate from "./modules/home/EntryGate.jsx";
 import WorkerOptions from "./modules/worker/WorkerOptions.jsx";
 import WorkerInvoices from "./modules/worker/WorkerInvoices.jsx";
@@ -32,7 +33,8 @@ const allTabs = [
   { id: "employees", icon: "👷", component: Employees, roles: ["owner"] },
   { id: "catalog", icon: "◫", component: Catalog, roles: ["owner"] },
   { id: "accounting", icon: "▦", component: Accounting, roles: ["owner"] },
-  { id: "settings", icon: "⚙", component: Settings, roles: ["owner"] }
+  { id: "settings", icon: "⚙", component: Settings, roles: ["owner"] },
+  { id: "devtools", icon: "🛠", component: DevTools, roles: ["owner"] }
 ];
 
 const themes = [
@@ -45,6 +47,7 @@ function getTabLabel(tab, t) {
   if (tab.id === "dashboard") return "Accueil";
   if (tab.id === "workerOptions") return "Mes options";
   if (tab.id === "workerInvoices") return "Mes factures";
+  if (tab.id === "devtools") return "Dev";
   return t.tabs[tab.id] || tab.id;
 }
 
