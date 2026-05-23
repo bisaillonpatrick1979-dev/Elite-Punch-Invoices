@@ -5,80 +5,30 @@ import { useAppData } from "../../context/AppDataContext.jsx";
 import { formatDate } from "../../utils/dates.js";
 import { formatMoney } from "../../utils/money.js";
 
-const defaultForm = {
-  name: "",
-  role: "employee",
-  phone: "",
-  email: "",
-  defaultHourlyRate: "0",
-  defaultSquareFootRate: "0",
-  notes: ""
-};
+const defaultForm = { name: "", role: "employee", phone: "", email: "", defaultHourlyRate: "0", defaultSquareFootRate: "0", notes: "" };
+const DEFAULT_PIN = "0000";
 
 export default function Employees() {
   const { appData, updateAppData } = useAppData();
   const [form, setForm] = useState(defaultForm);
   const settings = appData.settings || {};
   const workers = appData.workers || [];
-
   const updateField = (field, value) => setForm((currentForm) => ({ ...currentForm, [field]: value }));
 
   const addWorker = () => {
     const name = form.name.trim();
     if (!name) return;
-
-    const newWorker = {
-      id: `worker-${Date.now()}`,
-      name,
-      role: form.role,
-      phone: form.phone.trim(),
-      email: form.email.trim(),
-      active: true,
-      defaultHourlyRate: Number(form.defaultHourlyRate || 0),
-      defaultSquareFootRate: Number(form.defaultSquareFootRate || 0),
-      invoicePrefix: name.replace(/[^a-z0-9]/gi, "").slice(0, 3).toUpperCase() || "WRK",
-      nextInvoiceNumber: 1,
-      signatureDataUrl: "",
-      signatureDate: "",
-      notes: form.notes.trim(),
-      createdAt: new Date().toISOString()
-    };
-
+    const newWorker = { id: `worker-${Date.now()}`, name, role: form.role, phone: form.phone.trim(), email: form.email.trim(), active: true, workerKey: DEFAULT_PIN, defaultHourlyRate: Number(form.defaultHourlyRate || 0), defaultSquareFootRate: Number(form.defaultSquareFootRate || 0), invoicePrefix: name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") || "worker", nextInvoiceNumber: 1, signatureDataUrl: "", signatureDate: "", notes: form.notes.trim(), createdAt: new Date().toISOString() };
     updateAppData((currentData) => ({ ...currentData, workers: [newWorker, ...(currentData.workers || [])] }));
     setForm(defaultForm);
   };
 
-  const updateWorker = (workerId, field, value) => {
-    updateAppData((currentData) => ({
-      ...currentData,
-      workers: (currentData.workers || []).map((worker) => worker.id === workerId ? { ...worker, [field]: value } : worker)
-    }));
-  };
-
+  const updateWorker = (workerId, field, value) => updateAppData((currentData) => ({ ...currentData, workers: (currentData.workers || []).map((worker) => worker.id === workerId ? { ...worker, [field]: value } : worker) }));
   const updateWorkerNumber = (workerId, field, value) => updateWorker(workerId, field, Number(value || 0));
+  const resetWorkerPin = (workerId) => updateWorker(workerId, "workerKey", DEFAULT_PIN);
   const toggleWorker = (workerId) => updateAppData((currentData) => ({ ...currentData, workers: (currentData.workers || []).map((worker) => worker.id === workerId ? { ...worker, active: !worker.active } : worker) }));
+  const saveWorkerSignature = (workerId, signatureDataUrl) => updateAppData((currentData) => ({ ...currentData, workers: (currentData.workers || []).map((worker) => worker.id === workerId ? { ...worker, signatureDataUrl, signatureDate: new Date().toISOString() } : worker) }));
+  const clearWorkerSignature = (workerId) => updateAppData((currentData) => ({ ...currentData, workers: (currentData.workers || []).map((worker) => worker.id === workerId ? { ...worker, signatureDataUrl: "", signatureDate: "" } : worker) }));
 
-  const saveWorkerSignature = (workerId, signatureDataUrl) => {
-    updateAppData((currentData) => ({
-      ...currentData,
-      workers: (currentData.workers || []).map((worker) => worker.id === workerId ? { ...worker, signatureDataUrl, signatureDate: new Date().toISOString() } : worker)
-    }));
-  };
-
-  const clearWorkerSignature = (workerId) => {
-    updateAppData((currentData) => ({
-      ...currentData,
-      workers: (currentData.workers || []).map((worker) => worker.id === workerId ? { ...worker, signatureDataUrl: "", signatureDate: "" } : worker)
-    }));
-  };
-
-  return (
-    <section className="module-page">
-      <div className="hero-card"><span className="status-pill">Workers</span><h2>Employees and subcontractors</h2><p>Add workers with default rates, invoice sequence and their own invoice signature.</p></div>
-
-      <div className="info-card"><h2>Add worker</h2><div className="form-grid"><label className="field"><span>Name</span><input value={form.name} onChange={(event) => updateField("name", event.target.value)} /></label><label className="field"><span>Role</span><select value={form.role} onChange={(event) => updateField("role", event.target.value)}><option value="employee">Employee</option><option value="subcontractor">Subcontractor</option><option value="owner">Owner</option></select></label><label className="field"><span>Phone</span><input value={form.phone} onChange={(event) => updateField("phone", event.target.value)} /></label><label className="field"><span>Email</span><input value={form.email} onChange={(event) => updateField("email", event.target.value)} /></label><label className="field"><span>Hourly rate</span><input type="number" min="0" step="0.01" value={form.defaultHourlyRate} onChange={(event) => updateField("defaultHourlyRate", event.target.value)} /></label><label className="field"><span>Square-foot rate</span><input type="number" min="0" step="0.01" value={form.defaultSquareFootRate} onChange={(event) => updateField("defaultSquareFootRate", event.target.value)} /></label><label className="field field-full"><span>Notes</span><textarea rows="3" value={form.notes} onChange={(event) => updateField("notes", event.target.value)} /></label></div><div className="action-row"><button className="primary-action" type="button" onClick={addWorker}>Add worker</button></div></div>
-
-      <div className="info-card"><h2>Worker list</h2>{workers.length === 0 ? <p>No worker yet.</p> : <div className="simple-list">{workers.map((worker) => <div className="list-item" key={worker.id}><strong>{worker.name}</strong><span>{worker.role || "employee"} | {worker.active ? "Active" : "Inactive"}</span><span>{worker.phone || "No phone"} | {worker.email || "No email"}</span><div className="form-grid"><label className="field"><span>Hourly</span><input type="number" min="0" step="0.01" value={worker.defaultHourlyRate || 0} onChange={(event) => updateWorkerNumber(worker.id, "defaultHourlyRate", event.target.value)} /></label><label className="field"><span>Sq ft</span><input type="number" min="0" step="0.01" value={worker.defaultSquareFootRate || 0} onChange={(event) => updateWorkerNumber(worker.id, "defaultSquareFootRate", event.target.value)} /></label><label className="field"><span>Invoice prefix</span><input value={worker.invoicePrefix || "WRK"} onChange={(event) => updateWorker(worker.id, "invoicePrefix", event.target.value.toUpperCase())} /></label><label className="field"><span>Next invoice #</span><input type="number" min="1" step="1" value={worker.nextInvoiceNumber || 1} onChange={(event) => updateWorkerNumber(worker.id, "nextInvoiceNumber", event.target.value)} /></label></div><span>Hourly: {formatMoney(worker.defaultHourlyRate || 0, settings.currency || "CAD", settings.locale || "fr-CA")} | Sq ft: {formatMoney(worker.defaultSquareFootRate || 0, settings.currency || "CAD", settings.locale || "fr-CA")}</span><div className="info-card nested-card"><h2>Worker signature</h2><SignaturePad onSave={(signatureDataUrl) => saveWorkerSignature(worker.id, signatureDataUrl)} />{worker.signatureDataUrl && <div className="signature-preview"><img src={worker.signatureDataUrl} alt={`${worker.name} signature`} /><p>Saved: {formatDate(worker.signatureDate, settings.locale, settings.timeZone)}</p><button className="secondary-action" type="button" onClick={() => clearWorkerSignature(worker.id)}>Remove signature</button></div>}</div><div className="action-row"><button className="secondary-action" type="button" onClick={() => toggleWorker(worker.id)}>{worker.active ? "Deactivate" : "Activate"}</button></div></div>)}</div>}</div>
-    </section>
-  );
+  return <section className="module-page"><div className="hero-card"><span className="status-pill">Workers</span><h2>Employees and subcontractors</h2><p>Add workers with default rates, PIN, invoice sequence and their own invoice signature.</p></div><div className="info-card"><h2>Add worker</h2><div className="form-grid"><label className="field"><span>Name</span><input value={form.name} onChange={(event) => updateField("name", event.target.value)} /></label><label className="field"><span>Role</span><select value={form.role} onChange={(event) => updateField("role", event.target.value)}><option value="employee">Employee</option><option value="subcontractor">Subcontractor</option><option value="owner">Owner</option></select></label><label className="field"><span>Phone</span><input value={form.phone} onChange={(event) => updateField("phone", event.target.value)} /></label><label className="field"><span>Email</span><input value={form.email} onChange={(event) => updateField("email", event.target.value)} /></label><label className="field"><span>Hourly rate</span><input type="number" min="0" step="0.01" value={form.defaultHourlyRate} onChange={(event) => updateField("defaultHourlyRate", event.target.value)} /></label><label className="field"><span>Square-foot rate</span><input type="number" min="0" step="0.01" value={form.defaultSquareFootRate} onChange={(event) => updateField("defaultSquareFootRate", event.target.value)} /></label><label className="field field-full"><span>Notes</span><textarea rows="3" value={form.notes} onChange={(event) => updateField("notes", event.target.value)} /></label></div><div className="action-row"><button className="primary-action" type="button" onClick={addWorker}>Add worker</button></div></div><div className="info-card"><h2>Worker list</h2>{workers.length === 0 ? <p>No worker yet.</p> : <div className="simple-list">{workers.map((worker) => <div className="list-item" key={worker.id}><strong>{worker.name}</strong><span>{worker.role || "employee"} | {worker.active ? "Active" : "Inactive"}</span><span>{worker.phone || "No phone"} | {worker.email || "No email"}</span><div className="form-grid"><label className="field"><span>PIN</span><input inputMode="numeric" type="password" value={worker.workerKey || DEFAULT_PIN} onChange={(event) => updateWorker(worker.id, "workerKey", event.target.value)} /></label><label className="field"><span>Hourly</span><input type="number" min="0" step="0.01" value={worker.defaultHourlyRate || 0} onChange={(event) => updateWorkerNumber(worker.id, "defaultHourlyRate", event.target.value)} /></label><label className="field"><span>Sq ft</span><input type="number" min="0" step="0.01" value={worker.defaultSquareFootRate || 0} onChange={(event) => updateWorkerNumber(worker.id, "defaultSquareFootRate", event.target.value)} /></label><label className="field"><span>Invoice name</span><input value={worker.invoicePrefix || "worker"} onChange={(event) => updateWorker(worker.id, "invoicePrefix", event.target.value.toLowerCase())} /></label><label className="field"><span>Next invoice #</span><input type="number" min="1" step="1" value={worker.nextInvoiceNumber || 1} onChange={(event) => updateWorkerNumber(worker.id, "nextInvoiceNumber", event.target.value)} /></label></div><span>Invoice example: {(worker.invoicePrefix || worker.name || "worker").toLowerCase()}-inv-{new Date().getFullYear()}-{String(worker.nextInvoiceNumber || 1).padStart(4, "0")}</span><span>Hourly: {formatMoney(worker.defaultHourlyRate || 0, settings.currency || "CAD", settings.locale || "fr-CA")} | Sq ft: {formatMoney(worker.defaultSquareFootRate || 0, settings.currency || "CAD", settings.locale || "fr-CA")}</span><div className="info-card nested-card"><h2>Worker signature</h2><SignaturePad onSave={(signatureDataUrl) => saveWorkerSignature(worker.id, signatureDataUrl)} />{worker.signatureDataUrl && <div className="signature-preview"><img src={worker.signatureDataUrl} alt={`${worker.name} signature`} /><p>Saved: {formatDate(worker.signatureDate, settings.locale, settings.timeZone)}</p><button className="secondary-action" type="button" onClick={() => clearWorkerSignature(worker.id)}>Remove signature</button></div>}</div><div className="action-row"><button className="secondary-action" type="button" onClick={() => resetWorkerPin(worker.id)}>Reset PIN 0000</button><button className="secondary-action" type="button" onClick={() => toggleWorker(worker.id)}>{worker.active ? "Deactivate" : "Activate"}</button></div></div>)}</div>}</div></section>;
 }
