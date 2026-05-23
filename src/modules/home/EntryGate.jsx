@@ -2,6 +2,7 @@ import { useState } from "react";
 
 import { useAppData } from "../../context/AppDataContext.jsx";
 import { useSession } from "../../context/SessionContext.jsx";
+import { writeLocalValue } from "../../db/storage.js";
 import { DEFAULT_KEY_VALUE, matchKey } from "../../utils/entry.js";
 
 export default function EntryGate() {
@@ -14,6 +15,7 @@ export default function EntryGate() {
   const workers = (appData.workers || []).filter((worker) => worker.active !== false && worker.id !== "owner");
 
   const updateSetting = (field, value) => {
+    if (field === "language") writeLocalValue("language", value);
     updateAppData((currentData) => ({ ...currentData, settings: { ...currentData.settings, [field]: value } }));
   };
 
