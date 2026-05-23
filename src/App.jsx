@@ -16,12 +16,14 @@ import Catalog from "./modules/catalog/Catalog.jsx";
 import Accounting from "./modules/accounting/Accounting.jsx";
 import Settings from "./modules/settings/Settings.jsx";
 import EntryGate from "./modules/home/EntryGate.jsx";
+import WorkerOptions from "./modules/worker/WorkerOptions.jsx";
 
 const allTabs = [
   { id: "dashboard", icon: "⌂", component: Dashboard, roles: ["owner", "worker"] },
   { id: "punch", icon: "⏱", component: Punch, roles: ["owner", "worker"] },
   { id: "calendar", icon: "▣", component: Calendar, roles: ["owner", "worker"] },
   { id: "payroll", icon: "$", component: Payroll, roles: ["owner", "worker"] },
+  { id: "workerOptions", icon: "⚙", component: WorkerOptions, roles: ["worker"] },
   { id: "invoices", icon: "▤", component: Invoices, roles: ["owner"] },
   { id: "clients", icon: "◇", component: Clients, roles: ["owner"] },
   { id: "employees", icon: "👷", component: Employees, roles: ["owner"] },
@@ -52,7 +54,7 @@ export default function App() {
   }
 
   const ActiveComponent = currentTab.component;
-  const currentLabel = t.tabs[currentTab.id] || currentTab.id;
+  const currentLabel = currentTab.id === "workerOptions" ? "Mes options" : (t.tabs[currentTab.id] || currentTab.id);
 
   return (
     <div className="app-shell" data-theme={theme}>
@@ -61,7 +63,7 @@ export default function App() {
         <div className="top-controls compact-controls"><button className="secondary-action" type="button" onClick={logout}>Sortir</button><label className="theme-picker"><span>{t.language}</span><select value={language} onChange={(event) => setLanguage(event.target.value)}><option value="fr">FR</option><option value="en">EN</option></select></label><label className="theme-picker"><span>{t.theme}</span><select value={theme} onChange={(event) => setTheme(event.target.value)}>{themes.map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}</select></label></div>
       </header>
       <main className="app-main"><AppStatus /><ActiveComponent t={t} language={language} /></main>
-      <nav className="bottom-tabs scroll-tabs" aria-label="Navigation principale">{tabs.map((tab) => { const isActive = tab.id === currentTab.id; const label = t.tabs[tab.id] || tab.id; return <button key={tab.id} type="button" className={isActive ? "tab-button active" : "tab-button"} onClick={() => setActiveTab(tab.id)} aria-current={isActive ? "page" : undefined}><span className="tab-icon">{tab.icon}</span><span className="tab-label">{label}</span></button>; })}</nav>
+      <nav className="bottom-tabs scroll-tabs" aria-label="Navigation principale">{tabs.map((tab) => { const isActive = tab.id === currentTab.id; const label = tab.id === "workerOptions" ? "Mes options" : (t.tabs[tab.id] || tab.id); return <button key={tab.id} type="button" className={isActive ? "tab-button active" : "tab-button"} onClick={() => setActiveTab(tab.id)} aria-current={isActive ? "page" : undefined}><span className="tab-icon">{tab.icon}</span><span className="tab-label">{label}</span></button>; })}</nav>
     </div>
   );
 }
