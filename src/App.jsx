@@ -1,6 +1,8 @@
 import { useMemo, useState } from "react";
 
 import AppStatus from "./components/AppStatus.jsx";
+import { useAppData } from "./context/AppDataContext.jsx";
+import { useSession } from "./context/SessionContext.jsx";
 import { readLocalValue, writeLocalValue } from "./db/storage.js";
 import { getTranslations } from "./i18n/index.js";
 
@@ -15,17 +17,17 @@ import Catalog from "./modules/catalog/Catalog.jsx";
 import Accounting from "./modules/accounting/Accounting.jsx";
 import Settings from "./modules/settings/Settings.jsx";
 
-const tabs = [
-  { id: "dashboard", icon: "⌂", component: Dashboard },
-  { id: "punch", icon: "⏱", component: Punch },
-  { id: "calendar", icon: "▣", component: Calendar },
-  { id: "invoices", icon: "▤", component: Invoices },
-  { id: "clients", icon: "◇", component: Clients },
-  { id: "employees", icon: "👷", component: Employees },
-  { id: "payroll", icon: "$", component: Payroll },
-  { id: "catalog", icon: "◫", component: Catalog },
-  { id: "accounting", icon: "▦", component: Accounting },
-  { id: "settings", icon: "⚙", component: Settings }
+const allTabs = [
+  { id: "dashboard", icon: "⌂", component: Dashboard, roles: ["owner", "worker"] },
+  { id: "punch", icon: "⏱", component: Punch, roles: ["owner", "worker"] },
+  { id: "calendar", icon: "▣", component: Calendar, roles: ["owner", "worker"] },
+  { id: "invoices", icon: "▤", component: Invoices, roles: ["owner"] },
+  { id: "clients", icon: "◇", component: Clients, roles: ["owner"] },
+  { id: "employees", icon: "👷", component: Employees, roles: ["owner"] },
+  { id: "payroll", icon: "$", component: Payroll, roles: ["owner", "worker"] },
+  { id: "catalog", icon: "◫", component: Catalog, roles: ["owner"] },
+  { id: "accounting", icon: "▦", component: Accounting, roles: ["owner"] },
+  { id: "settings", icon: "⚙", component: Settings, roles: ["owner"] }
 ];
 
 const themes = [
@@ -35,11 +37,15 @@ const themes = [
 ];
 
 export default function App() {
+  const { appData } = useAppData();
+  const { mode, workerId, setMode, setWorkerId } = useSession();
   const [activeTab, setActiveTab] = useState("dashboard");
   const [theme, setThemeState] = useState(() => readLocalValue("theme", "carbon-gold"));
   const [language, setLanguageState] = useState(() => readLocalValue("language", "fr"));
   const t = useMemo(() => getTranslations(language), [language]);
-  const currentTab = useMemo(() => tabs.find((tab) => tab.id === activeTab) || tabs[0], [activeTab]);
+  const tabs = useMemo(() => allTabs.filter((tab) => tab.roles.includes(mode)), [mode]);
+  const currentTab = useMemo(() => tabs.find((tab) => tab.id === activeTab) || tabs[0], [activeTab, tabs]);
+  const workers = appData.workers || [];
 
   const setTheme = (nextTheme) => {
     setThemeState(nextTheme);
@@ -49,6 +55,11 @@ export default function App() {
   const setLanguage = (nextLanguage) => {
     setLanguageState(nextLanguage);
     writeLocalValue("language", nextLanguage);
+  };
+
+  const changeMode = (nextMode) => {
+    setMode(nextMode);
+    setActiveTab("dashboard");
   };
 
   const ActiveComponent = currentTab.component;
@@ -62,6 +73,8 @@ export default function App() {
           <h1>{currentLabel}</h1>
         </div>
         <div className="top-controls">
+          <label className="theme-picker"><span>Mode</span><select value={mode} onChange={(event) => changeMode(event.target.value)}><option value="owner">Owner</option><option value="worker">Worker</option></select></label>
+          {mode === "worker" && <label className="theme-picker"><span>Worker</span><select value={workerId} onChange={(event) => setWorkerId(event.target.value)}>{workers.map((worker) => <option key={worker.id} value={worker.id}>{worker.name}</option>)}</select></label>}
           <label className="theme-picker"><span>{t.language}</span><select value={language} onChange={(event) => setLanguage(event.target.value)}><option value="fr">FR</option><option value="en">EN</option></select></label>
           <label className="theme-picker"><span>{t.theme}</span><select value={theme} onChange={(event) => setTheme(event.target.value)}>{themes.map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}</select></label>
         </div>
@@ -74,7 +87,7 @@ export default function App() {
 
       <nav className="bottom-tabs" aria-label="Navigation principale">
         {tabs.map((tab) => {
-          const isActive = tab.id === activeTab;
+          const isActive = tab.id === currentTab.id;
           const label = t.tabs[tab.id] || tab.id;
           return <button key={tab.id} type="button" className={isActive ? "tab-button active" : "tab-button"} onClick={() => setActiveTab(tab.id)} aria-current={isActive ? "page" : undefined}><span className="tab-icon">{tab.icon}</span><span className="tab-label">{label}</span></button>;
         })}
