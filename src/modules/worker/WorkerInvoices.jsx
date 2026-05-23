@@ -7,13 +7,20 @@ import { formatDate } from "../../utils/dates.js";
 import { formatMoney } from "../../utils/money.js";
 
 export default function WorkerInvoices() {
-  const { appData } = useAppData();
+  const { appData, updateAppData } = useAppData();
   const { workerId } = useSession();
   const [preview, setPreview] = useState(null);
   const settings = appData.settings || {};
   const worker = useMemo(() => (appData.workers || []).find((item) => item.id === workerId), [appData.workers, workerId]);
   const invoices = useMemo(() => (appData.invoices || []).filter((invoice) => invoice.workerId === workerId), [appData.invoices, workerId]);
   const money = (value, currency = settings.currency || "CAD") => formatMoney(value, currency, settings.locale || "fr-CA");
+
+  const markSent = (invoiceId) => {
+    updateAppData((currentData) => ({
+      ...currentData,
+      invoices: (currentData.invoices || []).map((invoice) => invoice.id === invoiceId ? { ...invoice, status: "sent", sentAt: new Date().toISOString(), updatedAt: new Date().toISOString() } : invoice)
+    }));
+  };
 
   const buildShareMessage = (invoice) => {
     const total = invoice.totals?.total || 0;
@@ -35,10 +42,10 @@ export default function WorkerInvoices() {
     const message = buildShareMessage(invoice);
     const file = getInvoicePdfFile({ invoice, settings });
     if (navigator.share && navigator.canShare?.({ files: [file] })) {
-      try { await navigator.share({ title: invoice.invoiceNumber, text: message, files: [file] }); return; } catch (error) { if (error?.name === "AbortError") return; }
+      try { await navigator.share({ title: invoice.invoiceNumber, text: message, files: [file] }); markSent(invoice.id); return; } catch (error) { if (error?.name === "AbortError") return; }
     }
     if (navigator.share) {
-      try { await navigator.share({ title: invoice.invoiceNumber, text: message }); return; } catch (error) { if (error?.name === "AbortError") return; }
+      try { await navigator.share({ title: invoice.invoiceNumber, text: message }); markSent(invoice.id); return; } catch (error) { if (error?.name === "AbortError") return; }
     }
     await copyShareMessage(invoice);
   };
@@ -47,12 +54,14 @@ export default function WorkerInvoices() {
     const to = invoice.clientEmail || "";
     const subject = encodeURIComponent(`Facture ${invoice.invoiceNumber}`);
     const body = encodeURIComponent(`${buildShareMessage(invoice)}\n\nNote: si le PDF n'est pas attaché automatiquement, utilise le bouton Télécharger PDF puis joins-le au courriel.`);
+    markSent(invoice.id);
     window.location.href = `mailto:${encodeURIComponent(to)}?subject=${subject}&body=${body}`;
   };
 
   const openSms = (invoice) => {
     const phone = invoice.clientPhone || "";
     const body = encodeURIComponent(`${buildShareMessage(invoice)}\n\nNote: si ton téléphone ne joint pas le PDF automatiquement, utilise Télécharger PDF ou Partager.`);
+    markSent(invoice.id);
     window.location.href = `sms:${encodeURIComponent(phone)}?&body=${body}`;
   };
 
