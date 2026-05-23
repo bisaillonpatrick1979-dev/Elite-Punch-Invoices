@@ -2,13 +2,12 @@ import { useRef, useState } from "react";
 
 function getCanvasPoint(canvas, event) {
   const rect = canvas.getBoundingClientRect();
-  const touch = event.touches?.[0];
-  const clientX = touch ? touch.clientX : event.clientX;
-  const clientY = touch ? touch.clientY : event.clientY;
+  const scaleX = canvas.width / rect.width;
+  const scaleY = canvas.height / rect.height;
 
   return {
-    x: clientX - rect.left,
-    y: clientY - rect.top
+    x: (event.clientX - rect.left) * scaleX,
+    y: (event.clientY - rect.top) * scaleY
   };
 }
 
@@ -22,15 +21,14 @@ export default function SignaturePad({ onSave }) {
     const context = canvas.getContext("2d");
     const point = getCanvasPoint(canvas, event);
 
+    canvas.setPointerCapture?.(event.pointerId);
     context.beginPath();
     context.moveTo(point.x, point.y);
     setIsDrawing(true);
   };
 
   const draw = (event) => {
-    if (!isDrawing) {
-      return;
-    }
+    if (!isDrawing) return;
 
     event.preventDefault();
     const canvas = canvasRef.current;
@@ -38,13 +36,17 @@ export default function SignaturePad({ onSave }) {
     const point = getCanvasPoint(canvas, event);
 
     context.lineTo(point.x, point.y);
-    context.lineWidth = 3;
+    context.lineWidth = 4;
     context.lineCap = "round";
+    context.lineJoin = "round";
     context.strokeStyle = "#111111";
     context.stroke();
   };
 
-  const stopDrawing = () => {
+  const stopDrawing = (event) => {
+    if (event?.pointerId) {
+      canvasRef.current?.releasePointerCapture?.(event.pointerId);
+    }
     setIsDrawing(false);
   };
 
@@ -56,24 +58,21 @@ export default function SignaturePad({ onSave }) {
 
   const saveSignature = () => {
     const canvas = canvasRef.current;
-    const dataUrl = canvas.toDataURL("image/png");
-    onSave(dataUrl);
+    onSave(canvas.toDataURL("image/png"));
   };
 
   return (
     <div className="signature-box">
       <canvas
         ref={canvasRef}
-        width="640"
-        height="240"
+        width="960"
+        height="360"
         className="signature-canvas"
-        onMouseDown={startDrawing}
-        onMouseMove={draw}
-        onMouseUp={stopDrawing}
-        onMouseLeave={stopDrawing}
-        onTouchStart={startDrawing}
-        onTouchMove={draw}
-        onTouchEnd={stopDrawing}
+        onPointerDown={startDrawing}
+        onPointerMove={draw}
+        onPointerUp={stopDrawing}
+        onPointerCancel={stopDrawing}
+        onPointerLeave={stopDrawing}
       />
       <div className="action-row">
         <button className="secondary-action" type="button" onClick={clearSignature}>Clear</button>
