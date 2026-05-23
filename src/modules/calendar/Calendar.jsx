@@ -14,31 +14,25 @@ const dayClasses = [
   { id: "explosive", label: "12 h+", min: 12, max: Infinity }
 ];
 
-function getMonthDays(date = new Date()) {
+function toISODate(date) {
+  return date.toISOString().slice(0, 10);
+}
+
+function getMonthDays(date) {
   const year = date.getFullYear();
   const month = date.getMonth();
   const firstDate = new Date(year, month, 1);
   const lastDate = new Date(year, month + 1, 0);
-  const firstWeekday = firstDate.getDay();
   const days = [];
 
-  for (let index = 0; index < firstWeekday; index += 1) {
-    days.push(null);
-  }
-
-  for (let day = 1; day <= lastDate.getDate(); day += 1) {
-    const value = new Date(year, month, day);
-    days.push(value.toISOString().slice(0, 10));
-  }
+  for (let index = 0; index < firstDate.getDay(); index += 1) days.push(null);
+  for (let day = 1; day <= lastDate.getDate(); day += 1) days.push(toISODate(new Date(year, month, day)));
 
   return days;
 }
 
 function getDayClass(hours) {
-  if (!hours || hours <= 0) {
-    return "empty";
-  }
-
+  if (!hours || hours <= 0) return "empty";
   const match = dayClasses.find((item) => hours > item.min && hours <= item.max);
   return match?.id || "explosive";
 }
@@ -46,27 +40,39 @@ function getDayClass(hours) {
 function groupPunchesByDate(punches = []) {
   return punches.reduce((groups, punch) => {
     const key = punch.startedAt?.slice(0, 10);
-
-    if (!key) {
-      return groups;
-    }
-
-    if (!groups[key]) {
-      groups[key] = [];
-    }
-
+    if (!key) return groups;
+    if (!groups[key]) groups[key] = [];
     groups[key].push(punch);
     return groups;
   }, {});
 }
 
+function getMonthSummary(monthDays, punchesByDate) {
+  const workedDays = monthDays.filter(Boolean).filter((day) => (punchesByDate[day] || []).length > 0);
+  const punches = workedDays.flatMap((day) => punchesByDate[day] || []);
+  const workedHours = punches.reduce((total, punch) => total + Number(punch.workedHours || 0), 0);
+  const breakHours = punches.reduce((total, punch) => total + minutesToHours(punch.breakMinutes || 0), 0);
+  const amount = punches.reduce((total, punch) => total + Number(punch.amount || 0), 0);
+
+  return { workedDays: workedDays.length, punchCount: punches.length, workedHours, breakHours, amount };
+}
+
 export default function Calendar() {
   const { appData } = useAppData();
+  const [viewDate, setViewDate] = useState(() => new Date());
   const [selectedDate, setSelectedDate] = useState(null);
   const settings = appData.settings || {};
-  const monthDays = useMemo(() => getMonthDays(new Date()), []);
   const punchesByDate = useMemo(() => groupPunchesByDate(appData.punches || []), [appData.punches]);
+  const monthDays = useMemo(() => getMonthDays(viewDate), [viewDate]);
+  const monthSummary = useMemo(() => getMonthSummary(monthDays, punchesByDate), [monthDays, punchesByDate]);
   const selectedPunches = selectedDate ? punchesByDate[selectedDate] || [] : [];
+  const monthTitle = viewDate.toLocaleDateString(settings.locale || "fr-CA", { month: "long", year: "numeric" });
+  const money = (value) => formatMoney(value, settings.currency || "CAD", settings.locale || "fr-CA");
+
+  const moveMonth = (direction) => {
+    setViewDate((current) => new Date(current.getFullYear(), current.getMonth() + direction, 1));
+    setSelectedDate(null);
+  };
 
   return (
     <section className="module-page">
@@ -74,23 +80,33 @@ export default function Calendar() {
         <span className="status-pill">Calendar</span>
         <h2>Work calendar</h2>
         <p>Click a worked day to see punch details, pay type, hours, breaks and earned amount.</p>
+        <div className="action-row">
+          <button className="secondary-action" type="button" onClick={() => moveMonth(-1)}>Previous</button>
+          <button className="secondary-action" type="button" onClick={() => moveMonth(1)}>Next</button>
+        </div>
+      </div>
+
+      <div className="info-card">
+        <h2>{monthTitle}</h2>
+        <div className="mini-stats">
+          <span>{monthSummary.workedDays} worked days</span>
+          <span>{monthSummary.punchCount} punches</span>
+          <span>{monthSummary.workedHours.toFixed(2)} h worked</span>
+          <span>{monthSummary.breakHours.toFixed(2)} h break</span>
+          <span>{money(monthSummary.amount)}</span>
+        </div>
       </div>
 
       <div className="info-card">
         <h2>Legend</h2>
         <div className="legend-grid">
-          {dayClasses.map((item) => (
-            <span className={`legend-pill day-${item.id}`} key={item.id}>{item.label}</span>
-          ))}
+          {dayClasses.map((item) => <span className={`legend-pill day-${item.id}`} key={item.id}>{item.label}</span>)}
         </div>
       </div>
 
       <div className="calendar-grid">
         {monthDays.map((day, index) => {
-          if (!day) {
-            return <div className="calendar-cell muted-cell" key={`empty-${index}`} />;
-          }
-
+          if (!day) return <div className="calendar-cell muted-cell" key={`empty-${index}`} />;
           const punches = punchesByDate[day] || [];
           const hours = punches.reduce((total, punch) => total + Number(punch.workedHours || 0), 0);
           const amount = punches.reduce((total, punch) => total + Number(punch.amount || 0), 0);
@@ -100,7 +116,7 @@ export default function Calendar() {
             <button className={`calendar-cell day-${dayClass}`} key={day} type="button" onClick={() => setSelectedDate(day)}>
               <strong>{Number(day.slice(-2))}</strong>
               {hours > 0 && <span>{hours.toFixed(1)} h</span>}
-              {amount > 0 && <small>{formatMoney(amount, settings.currency || "CAD", settings.locale || "fr-CA")}</small>}
+              {amount > 0 && <small>{money(amount)}</small>}
             </button>
           );
         })}
@@ -108,7 +124,7 @@ export default function Calendar() {
 
       {selectedDate && (
         <div className="info-card">
-          <h2>{formatDate(selectedDate)}</h2>
+          <h2>{formatDate(selectedDate, settings.locale, settings.timeZone)}</h2>
           {selectedPunches.length === 0 ? <p>No punch saved for this day.</p> : (
             <div className="simple-list">
               {selectedPunches.map((punch) => (
@@ -118,8 +134,10 @@ export default function Calendar() {
                   <span>Pay type: {punch.payType}</span>
                   <span>Start: {formatTime(punch.startedAt)} | Finish: {formatTime(punch.endedAt)}</span>
                   <span>Break: {minutesToHours(punch.breakMinutes || 0).toFixed(2)} h | Worked: {Number(punch.workedHours || 0).toFixed(2)} h</span>
-                  <span>Earned: {formatMoney(punch.amount || 0, settings.currency || "CAD", settings.locale || "fr-CA")}</span>
-                  <span>Effective hourly: {formatMoney(punch.effectiveHourly || 0, settings.currency || "CAD", settings.locale || "fr-CA")} / h</span>
+                  <span>Earned: {money(punch.amount || 0)}</span>
+                  <span>Effective hourly: {money(punch.effectiveHourly || 0)} / h</span>
+                  <span>Invoice: {punch.invoiceStatus || "not_invoiced"}</span>
+                  <span>Payroll: {punch.payrollStatus === "paid" ? "paid" : "unpaid"}</span>
                 </div>
               ))}
             </div>
