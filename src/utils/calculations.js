@@ -75,6 +75,21 @@ export function calculateTaxAmount(subtotal, taxes = DEFAULT_TAX_PROFILE.taxes, 
   );
 }
 
+function getTaxableSubtotal(lines = [], safeDiscount = 0, subtotal = 0) {
+  const taxableBeforeDiscount = roundMoney(
+    lines
+      .filter((line) => line.taxable !== false)
+      .reduce((total, line) => total + toNumber(line.total), 0)
+  );
+
+  if (subtotal <= 0 || safeDiscount <= 0) {
+    return taxableBeforeDiscount;
+  }
+
+  const discountRatio = safeDiscount / subtotal;
+  return Math.max(0, roundMoney(taxableBeforeDiscount - taxableBeforeDiscount * discountRatio));
+}
+
 export function calculateInvoiceTotals({
   lines = [],
   discountAmount = 0,
@@ -92,10 +107,10 @@ export function calculateInvoiceTotals({
     ? calculateDiscountAmount(subtotal, { enabled: true, type: discountType, value: discountValue })
     : roundMoney(discountAmount);
   const safeDiscount = discountEnabled || discountAmount ? Math.min(subtotal, discount) : 0;
-  const taxableSubtotal = Math.max(0, subtotal - safeDiscount);
+  const taxableSubtotal = getTaxableSubtotal(lines, safeDiscount, subtotal);
   const taxAmount = calculateTaxAmount(taxableSubtotal, taxes, taxEnabled);
   const advance = advanceEnabled ? roundMoney(advanceAmount) : 0;
-  const total = roundMoney(taxableSubtotal + taxAmount - advance);
+  const total = roundMoney(Math.max(0, subtotal - safeDiscount) + taxAmount - advance);
   const balanceDue = roundMoney(total - toNumber(paidAmount));
 
   return {
