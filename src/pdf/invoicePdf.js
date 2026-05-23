@@ -43,18 +43,27 @@ function addBillingHeader(doc, billingProfile = {}) {
   doc.text(billingName, 14, 18);
   doc.setFont("helvetica", "normal");
   doc.setFontSize(9);
-  const lines = [billingProfile.civicAddress, billingProfile.phone, billingProfile.email, billingProfile.taxNumber ? `Tax/SIN: ${billingProfile.taxNumber}` : "", billingProfile.wcbNumber ? `WCB: ${billingProfile.wcbNumber}` : "", billingProfile.liabilityInsuranceNumber ? `Insurance: ${billingProfile.liabilityInsuranceNumber}` : ""].filter(Boolean);
+  const lines = [
+    billingProfile.civicAddress,
+    billingProfile.phone,
+    billingProfile.email,
+    billingProfile.taxNumber ? `Tax/SIN: ${billingProfile.taxNumber}` : "",
+    billingProfile.wcbNumber ? `WCB: ${billingProfile.wcbNumber}` : "",
+    billingProfile.liabilityInsuranceNumber ? `Insurance: ${billingProfile.liabilityInsuranceNumber}` : ""
+  ].filter(Boolean);
   lines.slice(0, 6).forEach((line, index) => doc.text(String(line), 14, 25 + index * 5));
 }
 
 function addSignature(doc, invoice = {}, billingProfile = {}, locale = "fr-CA") {
   const signatureY = 232;
-  const signatureDataUrl = invoice.workerSignatureDataUrl || billingProfile.signatureDataUrl;
-  const signatureDate = invoice.workerSignatureDate || billingProfile.signatureDate || new Date().toISOString();
+  const signatureDataUrl = invoice.signatureDataUrl || invoice.workerSignatureDataUrl || "";
+  const signatureDate = invoice.signatureDate || invoice.workerSignatureDate || new Date().toISOString();
   const label = invoice.workerName ? `Signature - ${invoice.workerName}` : "Signature";
+
   doc.setFont("helvetica", "normal");
   doc.setFontSize(9);
   doc.text(label, 120, signatureY);
+
   if (signatureDataUrl) {
     try {
       doc.addImage(signatureDataUrl, "PNG", 120, signatureY + 3, 62, 24, undefined, "FAST");
@@ -65,6 +74,7 @@ function addSignature(doc, invoice = {}, billingProfile = {}, locale = "fr-CA") 
   } else {
     doc.text("______________________________", 120, signatureY + 16);
   }
+
   doc.text(`Date: ${formatDate(signatureDate, locale)}`, 120, signatureY + 34);
 }
 
@@ -143,7 +153,7 @@ export function getInvoicePdfFile({ invoice, settings }) {
 
 export function getInvoicePdfPreviewUrl({ invoice, settings }) {
   const doc = createInvoicePdfDoc({ invoice, settings });
-  return doc.output("bloburl");
+  return doc.output("datauristring");
 }
 
 export function downloadInvoicePdf({ invoice, settings }) {
