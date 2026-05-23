@@ -8,6 +8,10 @@ function safeText(value, fallback = "") {
   return value ? String(value) : fallback;
 }
 
+function safeFileName(value, fallback = "invoice") {
+  return safeText(value, fallback).toLowerCase().replace(/[^a-z0-9-_]+/g, "-").replace(/^-+|-+$/g, "") || fallback;
+}
+
 function addWatermarkLogo(doc, logoDataUrl) {
   if (!logoDataUrl) return;
   try {
@@ -145,26 +149,10 @@ export function downloadInvoicePdf({ invoice, settings }) {
 
   addTotalLine(doc, "Subtotal", totals.subtotal, y, currency, locale);
   y += 6;
-
-  if (invoice.discountEnabled) {
-    addTotalLine(doc, "Discount", -(totals.discount || 0), y, currency, locale);
-    y += 6;
-  }
-
-  if (invoice.taxEnabled !== false) {
-    addTotalLine(doc, "Tax", totals.taxAmount, y, currency, locale);
-    y += 6;
-  }
-
-  if (invoice.advanceEnabled) {
-    addTotalLine(doc, "Advance / deposit", -(totals.advance || 0), y, currency, locale);
-    y += 6;
-  }
-
-  if (Number(totals.paidAmount || 0) > 0) {
-    addTotalLine(doc, "Paid", -(totals.paidAmount || 0), y, currency, locale);
-    y += 6;
-  }
+  if (invoice.discountEnabled) { addTotalLine(doc, "Discount", -(totals.discount || 0), y, currency, locale); y += 6; }
+  if (invoice.taxEnabled !== false) { addTotalLine(doc, "Tax", totals.taxAmount, y, currency, locale); y += 6; }
+  if (invoice.advanceEnabled) { addTotalLine(doc, "Advance / deposit", -(totals.advance || 0), y, currency, locale); y += 6; }
+  if (Number(totals.paidAmount || 0) > 0) { addTotalLine(doc, "Paid", -(totals.paidAmount || 0), y, currency, locale); y += 6; }
 
   y += 2;
   addTotalLine(doc, "Total", totals.total, y, currency, locale, true);
@@ -173,5 +161,5 @@ export function downloadInvoicePdf({ invoice, settings }) {
 
   addInvoiceNotes(doc, invoice, Math.max(y + 12, 205));
   addSignature(doc, invoice, billingProfile, locale);
-  doc.save(`${safeText(invoice.invoiceNumber, "invoice")}.pdf`);
+  doc.save(`${safeFileName(invoice.invoiceNumber)}.pdf`);
 }
