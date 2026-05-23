@@ -38,6 +38,7 @@ const allTabs = [
 ];
 
 const themes = [
+  { id: "hailite-neon-hud", label: "Hailite Neon HUD" },
   { id: "carbon-gold", label: "Carbon Gold" },
   { id: "arctic-ledger", label: "Arctic Ledger" },
   { id: "storm-steel", label: "Storm Steel" },
