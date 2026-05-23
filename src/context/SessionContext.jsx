@@ -3,14 +3,21 @@ import { createContext, useContext, useMemo, useState } from "react";
 import { readLocalValue, writeLocalValue } from "../db/storage.js";
 
 const SessionContext = createContext(null);
+const VALID_MODES = ["select", "owner", "worker"];
+
+function readMode() {
+  const savedMode = readLocalValue("sessionMode", "select");
+  return VALID_MODES.includes(savedMode) ? savedMode : "select";
+}
 
 export function SessionProvider({ children }) {
-  const [mode, setModeState] = useState(() => readLocalValue("sessionMode", "select"));
+  const [mode, setModeState] = useState(readMode);
   const [workerId, setWorkerIdState] = useState(() => readLocalValue("sessionWorkerId", ""));
 
   const setMode = (nextMode) => {
-    setModeState(nextMode);
-    writeLocalValue("sessionMode", nextMode);
+    const safeMode = VALID_MODES.includes(nextMode) ? nextMode : "select";
+    setModeState(safeMode);
+    writeLocalValue("sessionMode", safeMode);
   };
 
   const setWorkerId = (nextWorkerId) => {
@@ -34,18 +41,7 @@ export function SessionProvider({ children }) {
   };
 
   const value = useMemo(
-    () => ({
-      mode,
-      workerId,
-      setMode,
-      setWorkerId,
-      loginOwner,
-      loginWorker,
-      logout,
-      isOwner: mode === "owner",
-      isWorker: mode === "worker",
-      isSelecting: mode === "select"
-    }),
+    () => ({ mode, workerId, setMode, setWorkerId, loginOwner, loginWorker, logout, isOwner: mode === "owner", isWorker: mode === "worker", isSelecting: mode === "select" }),
     [mode, workerId]
   );
 
