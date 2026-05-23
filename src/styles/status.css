@@ -10,20 +10,80 @@
   box-shadow: var(--shadow);
 }
 
-.app-status span {
-  font-weight: 900;
+.app-status span { font-weight: 900; }
+.app-status small { color: var(--muted); font-size: 0.78rem; font-weight: 700; }
+.app-status.online span { color: var(--success); }
+.app-status.offline span { color: var(--gold); }
+
+.punch-meters {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(220px, 0.8fr);
+  gap: 16px;
+  margin: 18px 0;
 }
 
-.app-status small {
+.punch-money-panel,
+.punch-time-panel {
+  min-height: 150px;
+  padding: 18px;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+}
+
+.punch-money-panel {
+  background: radial-gradient(circle at 18% 18%, rgba(255, 214, 102, 0.24), transparent 35%), linear-gradient(135deg, rgba(255,255,255,0.08), rgba(0,0,0,0.25));
+}
+
+.punch-time-panel {
+  background: radial-gradient(circle at 82% 14%, rgba(82, 164, 255, 0.24), transparent 36%), linear-gradient(135deg, rgba(255,255,255,0.07), rgba(0,0,0,0.28));
+}
+
+.punch-meter-label {
+  display: block;
+  margin-bottom: 10px;
   color: var(--muted);
-  font-size: 0.78rem;
-  font-weight: 700;
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
-.app-status.online span {
-  color: var(--success);
-}
-
-.app-status.offline span {
+.money-preview {
   color: var(--gold);
+  font-size: clamp(2.7rem, 11vw, 5.2rem);
+  line-height: 0.95;
+  font-weight: 1000;
+  letter-spacing: -0.08em;
+  text-shadow: 0 0 28px rgba(255, 207, 87, 0.28);
+}
+
+.time-preview {
+  color: var(--text);
+  font-size: clamp(1.75rem, 7vw, 3rem);
+  line-height: 1;
+  font-weight: 1000;
+  letter-spacing: -0.045em;
+}
+
+.punch-side-info {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.punch-chip {
+  padding: 9px 10px;
+  border-radius: 16px;
+  background: rgba(255,255,255,0.07);
+  border: 1px solid rgba(255,255,255,0.1);
+  font-size: 0.78rem;
+  font-weight: 850;
+}
+
+@media (max-width: 660px) {
+  .punch-meters { grid-template-columns: 1fr; }
+  .punch-money-panel,
+  .punch-time-panel { min-height: 128px; }
 }
