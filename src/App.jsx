@@ -1,9 +1,10 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import AppStatus from "./components/AppStatus.jsx";
+import { useAppData } from "./context/AppDataContext.jsx";
+import { useSession } from "./context/SessionContext.jsx";
 import { readLocalValue, writeLocalValue } from "./db/storage.js";
 import { getTranslations } from "./i18n/index.js";
-import { useSession } from "./context/SessionContext.jsx";
 
 import HomeRouter from "./modules/home/HomeRouter.jsx";
 import Punch from "./modules/punch/Punch.jsx";
@@ -48,6 +49,7 @@ function getTabLabel(tab, t) {
 }
 
 export default function App() {
+  const { appData } = useAppData();
   const { mode, isSelecting, logout } = useSession();
   const [activeTab, setActiveTab] = useState("dashboard");
   const [theme, setThemeState] = useState(() => readLocalValue("theme", "carbon-gold"));
@@ -57,6 +59,11 @@ export default function App() {
   const currentTab = useMemo(() => tabs.find((tab) => tab.id === activeTab) || tabs[0], [activeTab, tabs]);
   const setTheme = (nextTheme) => { setThemeState(nextTheme); writeLocalValue("theme", nextTheme); };
   const setLanguage = (nextLanguage) => { setLanguageState(nextLanguage); writeLocalValue("language", nextLanguage); };
+
+  useEffect(() => {
+    const savedLanguage = appData.settings?.language;
+    if (savedLanguage && savedLanguage !== language) setLanguage(savedLanguage);
+  }, [appData.settings?.language, language]);
 
   if (isSelecting) {
     return <div className="app-shell" data-theme={theme}><main className="app-main"><EntryGate /></main></div>;
