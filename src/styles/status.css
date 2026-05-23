@@ -1,0 +1,29 @@
+.app-status {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow);
+}
+
+.app-status span {
+  font-weight: 900;
+}
+
+.app-status small {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.app-status.online span {
+  color: var(--success);
+}
+
+.app-status.offline span {
+  color: var(--gold);
+}
