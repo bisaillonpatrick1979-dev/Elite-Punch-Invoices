@@ -14,15 +14,38 @@ export default function WorkerInvoices() {
   const invoices = useMemo(() => (appData.invoices || []).filter((invoice) => invoice.workerId === workerId), [appData.invoices, workerId]);
   const money = (value, currency = settings.currency || "CAD") => formatMoney(value, currency, settings.locale || "fr-CA");
 
-  const copyShareMessage = async (invoice) => {
+  const buildShareMessage = (invoice) => {
     const total = invoice.totals?.total || 0;
-    const message = `Invoice ${invoice.invoiceNumber}\nWorker: ${invoice.workerName || worker?.name || "Worker"}\nClient: ${invoice.clientName || "No client"}\nTotal: ${money(total, invoice.currency)}\nStatus: ${invoice.status}`;
+    return `Facture ${invoice.invoiceNumber}\nEmployé: ${invoice.workerName || worker?.name || "Employé"}\nClient: ${invoice.clientName || "No client"}\nTotal: ${money(total, invoice.currency)}\nStatut: ${invoice.status}`;
+  };
+
+  const copyShareMessage = async (invoice) => {
+    const message = buildShareMessage(invoice);
     try {
       await navigator.clipboard.writeText(message);
-      alert("Message copied.");
+      alert("Message copié.");
     } catch (error) {
       alert(message);
     }
+  };
+
+  const shareInvoice = async (invoice) => {
+    const message = buildShareMessage(invoice);
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: invoice.invoiceNumber, text: message });
+        return;
+      } catch (error) {
+        if (error?.name === "AbortError") return;
+      }
+    }
+    await copyShareMessage(invoice);
+  };
+
+  const openMail = (invoice) => {
+    const subject = encodeURIComponent(`Facture ${invoice.invoiceNumber}`);
+    const body = encodeURIComponent(buildShareMessage(invoice));
+    window.location.href = `mailto:?subject=${subject}&body=${body}`;
   };
 
   return (
@@ -30,7 +53,7 @@ export default function WorkerInvoices() {
       <div className="hero-card">
         <span className="status-pill">Mes factures</span>
         <h2>{worker?.name || "Employé"}</h2>
-        <p>Factures liées à ton nom seulement. Tu peux télécharger le PDF ou copier un message d’envoi.</p>
+        <p>Factures liées à ton nom seulement. Tu peux télécharger le PDF, partager ou ouvrir un courriel.</p>
       </div>
 
       {invoices.length === 0 ? (
@@ -60,6 +83,8 @@ export default function WorkerInvoices() {
                 </div>
                 <div className="action-row">
                   <button className="secondary-action" type="button" onClick={() => downloadInvoicePdf({ invoice, settings })}>Télécharger PDF</button>
+                  <button className="secondary-action" type="button" onClick={() => shareInvoice(invoice)}>Partager</button>
+                  <button className="secondary-action" type="button" onClick={() => openMail(invoice)}>Courriel</button>
                   <button className="secondary-action" type="button" onClick={() => copyShareMessage(invoice)}>Copier message</button>
                 </div>
               </div>
