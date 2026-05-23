@@ -40,7 +40,15 @@ const allTabs = [
 const themes = [
   { id: "carbon-gold", label: "Carbon Gold" },
   { id: "arctic-ledger", label: "Arctic Ledger" },
-  { id: "storm-steel", label: "Storm Steel" }
+  { id: "storm-steel", label: "Storm Steel" },
+  { id: "midnight-chrome", label: "Midnight Chrome" },
+  { id: "electric-violet", label: "Electric Violet" },
+  { id: "contractor-pro", label: "Contractor Pro" },
+  { id: "alpine-white", label: "Alpine White" },
+  { id: "hailite-storm", label: "Hailite Storm" },
+  { id: "blueprint-pro", label: "Blueprint Pro" },
+  { id: "luxury-copper", label: "Luxury Copper" },
+  { id: "forest-emerald", label: "Forest Emerald" }
 ];
 
 function getTabLabel(tab, t) {
