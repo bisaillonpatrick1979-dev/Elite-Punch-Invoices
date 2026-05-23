@@ -8,11 +8,7 @@ export const initialSettings = {
   timeZone: "America/Edmonton",
   theme: "carbon-gold",
   taxProfile: DEFAULT_TAX_PROFILE,
-  measurementSystem: {
-    length: "feet-inches",
-    area: "square-feet",
-    linear: "linear-feet"
-  },
+  measurementSystem: { length: "feet-inches", area: "square-feet", linear: "linear-feet" },
   billingProfile: {
     displayName: "",
     companyName: "",
@@ -33,25 +29,22 @@ export const initialWorkers = [
   {
     id: "owner",
     name: "Owner",
+    role: "owner",
     phone: "",
     email: "",
     active: true,
     defaultHourlyRate: 0,
     defaultSquareFootRate: 0,
+    invoicePrefix: "OWN",
+    nextInvoiceNumber: 1,
+    signatureDataUrl: "",
+    signatureDate: "",
     notes: ""
   }
 ];
 
 export const initialCatalogItems = [
-  {
-    id: "labor-hour",
-    name: "Labor hour",
-    category: "service",
-    unit: "hour",
-    defaultPrice: 0,
-    taxable: true,
-    active: true
-  }
+  { id: "labor-hour", name: "Labor hour", category: "service", unit: "hour", defaultPrice: 0, taxable: true, active: true }
 ];
 
 export function createInitialAppData() {
