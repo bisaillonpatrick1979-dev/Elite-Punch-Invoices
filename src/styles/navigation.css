@@ -1,39 +1,81 @@
+.bottom-tabs.scroll-tabs,
 .bottom-tabs {
-  grid-template-columns: repeat(10, 1fr);
-  gap: 4px;
+  display: flex;
+  grid-template-columns: none;
+  gap: 10px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 10px;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+}
+
+.bottom-tabs::-webkit-scrollbar {
+  display: none;
 }
 
 .tab-button {
-  min-height: 60px;
-  padding: 5px 1px;
+  flex: 0 0 92px;
+  min-width: 92px;
+  min-height: 68px;
+  padding: 8px 8px;
+  scroll-snap-align: center;
 }
 
 .tab-icon {
-  font-size: 0.95rem;
+  font-size: 1.28rem;
+  line-height: 1;
 }
 
 .tab-label {
-  font-size: 0.5rem;
+  font-size: 0.72rem;
+  line-height: 1.05;
+  font-weight: 900;
+  letter-spacing: -0.01em;
+  white-space: normal;
 }
 
-@media (max-width: 390px) {
+.tab-button.active {
+  transform: translateY(-3px);
+}
+
+.clean-header {
+  align-items: flex-start;
+}
+
+.compact-controls {
+  max-width: 260px;
+}
+
+.home-workspace .module-page {
+  padding-bottom: 0;
+}
+
+.home-login-grid {
+  margin-top: 16px;
+}
+
+@media (max-width: 430px) {
+  .bottom-tabs.scroll-tabs,
   .bottom-tabs {
     right: 8px;
     bottom: 8px;
     left: 8px;
-    gap: 3px;
-    padding: 6px;
+    gap: 8px;
+    padding: 8px;
   }
 
   .tab-button {
-    min-height: 56px;
+    flex-basis: 86px;
+    min-width: 86px;
+    min-height: 66px;
   }
 
   .tab-icon {
-    font-size: 0.82rem;
+    font-size: 1.18rem;
   }
 
   .tab-label {
-    font-size: 0.42rem;
+    font-size: 0.68rem;
   }
 }
