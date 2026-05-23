@@ -1,5 +1,7 @@
 import { DEFAULT_TAX_PROFILE } from "../utils/calculations.js";
 
+export const DEFAULT_PIN = "0000";
+
 export const initialSettings = {
   language: "fr",
   currency: "CAD",
@@ -7,6 +9,7 @@ export const initialSettings = {
   region: "Alberta",
   timeZone: "America/Edmonton",
   theme: "carbon-gold",
+  ownerKey: DEFAULT_PIN,
   taxProfile: DEFAULT_TAX_PROFILE,
   measurementSystem: { length: "feet-inches", area: "square-feet", linear: "linear-feet" },
   billingProfile: {
@@ -33,9 +36,10 @@ export const initialWorkers = [
     phone: "",
     email: "",
     active: true,
+    workerKey: DEFAULT_PIN,
     defaultHourlyRate: 0,
     defaultSquareFootRate: 0,
-    invoicePrefix: "OWN",
+    invoicePrefix: "owner",
     nextInvoiceNumber: 1,
     signatureDataUrl: "",
     signatureDate: "",
