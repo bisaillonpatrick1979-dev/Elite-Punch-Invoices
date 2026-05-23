@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Elite Punch Invoice icon">
+  <defs>
+    <linearGradient id="bg" x1="80" y1="40" x2="430" y2="470" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#15120a"/>
+      <stop offset="0.48" stop-color="#050505"/>
+      <stop offset="1" stop-color="#2d210c"/>
+    </linearGradient>
+    <linearGradient id="gold" x1="120" y1="120" x2="390" y2="380" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#fff1a8"/>
+      <stop offset="0.45" stop-color="#d6a84f"/>
+      <stop offset="1" stop-color="#8a5e16"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="112" fill="url(#bg)"/>
+  <rect x="46" y="46" width="420" height="420" rx="92" fill="none" stroke="url(#gold)" stroke-width="18"/>
+  <path d="M154 148h204v52H216v48h116v50H216v64h150v52H154V148Z" fill="url(#gold)"/>
+  <circle cx="362" cy="150" r="30" fill="#f7d46b"/>
+</svg>
