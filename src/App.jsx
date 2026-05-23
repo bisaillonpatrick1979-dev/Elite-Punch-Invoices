@@ -5,7 +5,7 @@ import { readLocalValue, writeLocalValue } from "./db/storage.js";
 import { getTranslations } from "./i18n/index.js";
 import { useSession } from "./context/SessionContext.jsx";
 
-import Dashboard from "./modules/dashboard/Dashboard.jsx";
+import HomeRouter from "./modules/home/HomeRouter.jsx";
 import Punch from "./modules/punch/Punch.jsx";
 import Calendar from "./modules/calendar/Calendar.jsx";
 import Invoices from "./modules/invoices/Invoices.jsx";
@@ -20,7 +20,7 @@ import WorkerOptions from "./modules/worker/WorkerOptions.jsx";
 import WorkerInvoices from "./modules/worker/WorkerInvoices.jsx";
 
 const allTabs = [
-  { id: "dashboard", icon: "⌂", component: Dashboard, roles: ["owner", "worker"] },
+  { id: "dashboard", icon: "⌂", component: HomeRouter, roles: ["owner", "worker"] },
   { id: "punch", icon: "⏱", component: Punch, roles: ["owner", "worker"] },
   { id: "calendar", icon: "▣", component: Calendar, roles: ["owner", "worker"] },
   { id: "payroll", icon: "$", component: Payroll, roles: ["owner", "worker"] },
@@ -41,6 +41,7 @@ const themes = [
 ];
 
 function getTabLabel(tab, t) {
+  if (tab.id === "dashboard") return "Accueil";
   if (tab.id === "workerOptions") return "Mes options";
   if (tab.id === "workerInvoices") return "Mes factures";
   return t.tabs[tab.id] || tab.id;
