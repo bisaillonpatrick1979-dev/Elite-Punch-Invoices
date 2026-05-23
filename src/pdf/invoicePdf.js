@@ -19,6 +19,19 @@ function addWatermarkLogo(doc, logoDataUrl) {
   }
 }
 
+function addWorkerMark(doc, workerName) {
+  if (!workerName) return;
+  try {
+    doc.setGState(new doc.GState({ opacity: 0.06 }));
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(42);
+    doc.text(String(workerName).toUpperCase(), 108, 150, { align: "center", angle: -32 });
+    doc.setGState(new doc.GState({ opacity: 1 }));
+  } catch (error) {
+    console.warn("Unable to render worker mark", error);
+  }
+}
+
 function addBillingHeader(doc, billingProfile = {}) {
   const billingName = billingProfile.companyName || billingProfile.displayName || "Billing profile missing";
   doc.setFont("helvetica", "bold");
@@ -39,15 +52,19 @@ function addBillingHeader(doc, billingProfile = {}) {
   lines.slice(0, 6).forEach((line, index) => doc.text(String(line), 14, 25 + index * 5));
 }
 
-function addSignature(doc, billingProfile = {}, locale = "fr-CA") {
+function addSignature(doc, invoice = {}, billingProfile = {}, locale = "fr-CA") {
   const signatureY = 232;
+  const signatureDataUrl = invoice.workerSignatureDataUrl || billingProfile.signatureDataUrl;
+  const signatureDate = invoice.workerSignatureDate || billingProfile.signatureDate || new Date().toISOString();
+  const label = invoice.workerName ? `Signature - ${invoice.workerName}` : "Signature";
+
   doc.setFont("helvetica", "normal");
   doc.setFontSize(9);
-  doc.text("Signature", 120, signatureY);
+  doc.text(label, 120, signatureY);
 
-  if (billingProfile.signatureDataUrl) {
+  if (signatureDataUrl) {
     try {
-      doc.addImage(billingProfile.signatureDataUrl, "PNG", 120, signatureY + 3, 62, 24, undefined, "FAST");
+      doc.addImage(signatureDataUrl, "PNG", 120, signatureY + 3, 62, 24, undefined, "FAST");
     } catch (error) {
       console.warn("Unable to render signature", error);
       doc.text("______________________________", 120, signatureY + 16);
@@ -56,7 +73,6 @@ function addSignature(doc, billingProfile = {}, locale = "fr-CA") {
     doc.text("______________________________", 120, signatureY + 16);
   }
 
-  const signatureDate = billingProfile.signatureDate || new Date().toISOString();
   doc.text(`Date: ${formatDate(signatureDate, locale)}`, 120, signatureY + 34);
 }
 
@@ -87,6 +103,7 @@ export function downloadInvoicePdf({ invoice, settings }) {
   const totals = invoice.totals || {};
 
   addWatermarkLogo(doc, billingProfile.logoDataUrl);
+  addWorkerMark(doc, invoice.workerWatermarkName || invoice.workerName);
   addBillingHeader(doc, billingProfile);
 
   doc.setFont("helvetica", "bold");
@@ -98,6 +115,7 @@ export function downloadInvoicePdf({ invoice, settings }) {
   doc.text(`Invoice: ${safeText(invoice.invoiceNumber)}`, 155, 27);
   doc.text(`Date: ${formatDate(invoice.createdAt, locale)}`, 155, 33);
   doc.text(`Status: ${safeText(invoice.status)}`, 155, 39);
+  if (invoice.workerName) doc.text(`Worker: ${invoice.workerName}`, 155, 45);
 
   doc.setFont("helvetica", "bold");
   doc.setFontSize(11);
@@ -154,6 +172,6 @@ export function downloadInvoicePdf({ invoice, settings }) {
   addTotalLine(doc, "Balance due", totals.balanceDue, y, currency, locale, true);
 
   addInvoiceNotes(doc, invoice, Math.max(y + 12, 205));
-  addSignature(doc, billingProfile, locale);
+  addSignature(doc, invoice, billingProfile, locale);
   doc.save(`${safeText(invoice.invoiceNumber, "invoice")}.pdf`);
 }
