@@ -6,6 +6,8 @@ import { AppDataProvider } from "./context/AppDataContext.jsx";
 import { SessionProvider } from "./context/SessionContext.jsx";
 
 import "./styles/themes.css";
+import "./styles/themes-extra.css";
+import "./styles/themes-extra-2.css";
 import "./styles/global.css";
 import "./styles/invoices.css";
 import "./styles/signature.css";
