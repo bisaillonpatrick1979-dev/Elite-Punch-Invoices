@@ -1,0 +1,88 @@
+.calendar-cell {
+  position: relative;
+  overflow: hidden;
+}
+
+.calendar-cell::after {
+  position: absolute;
+  right: 7px;
+  bottom: 5px;
+  font-size: 1.15rem;
+  line-height: 1;
+}
+
+.day-empty {
+  background: linear-gradient(135deg, rgba(35, 41, 55, 0.92), rgba(15, 18, 24, 0.92));
+}
+
+.day-empty::after {
+  content: "🏠";
+}
+
+.day-tiny {
+  background: linear-gradient(135deg, #2b2f77, #111633);
+}
+
+.day-tiny::after {
+  content: "😴";
+}
+
+.day-small {
+  background: linear-gradient(135deg, #0f766e, #053c3a);
+}
+
+.day-small::after {
+  content: "🌱";
+}
+
+.day-short {
+  background: linear-gradient(135deg, #2563eb, #102a69);
+}
+
+.day-short::after {
+  content: "☀️";
+}
+
+.day-normal {
+  background: linear-gradient(135deg, #16a34a, #064e22);
+}
+
+.day-normal::after {
+  content: "✅";
+}
+
+.day-big {
+  background: linear-gradient(135deg, #f59e0b, #78350f);
+}
+
+.day-big::after {
+  content: "💪";
+}
+
+.day-very-big {
+  background: linear-gradient(135deg, #ea580c, #7c2d12);
+}
+
+.day-very-big::after {
+  content: "🔥";
+}
+
+.day-explosive {
+  background: linear-gradient(135deg, #e11d48, #6d0c22);
+}
+
+.day-explosive::after {
+  content: "🚀";
+}
+
+.legend-pill.day-empty::after,
+.legend-pill.day-tiny::after,
+.legend-pill.day-small::after,
+.legend-pill.day-short::after,
+.legend-pill.day-normal::after,
+.legend-pill.day-big::after,
+.legend-pill.day-very-big::after,
+.legend-pill.day-explosive::after {
+  position: static;
+  margin-left: 6px;
+}
