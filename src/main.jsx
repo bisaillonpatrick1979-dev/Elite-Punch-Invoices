@@ -14,6 +14,8 @@ import "./styles/status.css";
 import "./styles/dialog.css";
 import "../public/premium-materials.css";
 import "../public/premium-punch.css";
+import "../public/premium-invoices.css";
+import "../public/premium-calendar.css";
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
