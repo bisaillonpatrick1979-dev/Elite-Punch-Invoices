@@ -10,6 +10,7 @@ import "./styles/invoices.css";
 import "./styles/signature.css";
 import "./styles/navigation.css";
 import "./styles/status.css";
+import "./styles/dialog.css";
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
