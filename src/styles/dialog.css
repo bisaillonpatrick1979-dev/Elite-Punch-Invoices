@@ -1,4 +1,5 @@
-.dialog-layer {
+.dialog-layer,
+.modal-backdrop {
   position: fixed;
   top: 0;
   right: 0;
@@ -11,7 +12,8 @@
   background: rgba(0,0,0,0.72);
 }
 
-.dialog-panel {
+.dialog-panel,
+.modal-card {
   width: min(100%, 760px);
   max-height: 88vh;
   overflow: auto;
