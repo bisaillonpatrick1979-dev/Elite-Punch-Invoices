@@ -12,9 +12,10 @@ export const INVOICE_STATUSES = {
 };
 
 export function getInvoiceGroupKey(punch) {
+  const worker = punch.workerId || "owner";
   const client = punch.clientName || "No client";
   const address = punch.jobAddress || punch.jobName || "No address";
-  return `${client.trim().toLowerCase()}|${address.trim().toLowerCase()}`;
+  return `${worker}|${client.trim().toLowerCase()}|${address.trim().toLowerCase()}`;
 }
 
 export function createInvoiceLineFromPunch(punch) {
@@ -49,11 +50,7 @@ export function recalculateInvoice(invoice, taxes) {
     taxes
   });
 
-  return {
-    ...invoice,
-    totals,
-    updatedAt: new Date().toISOString()
-  };
+  return { ...invoice, totals, updatedAt: new Date().toISOString() };
 }
 
 function applyPunchClientInfo(invoice, punch) {
@@ -67,13 +64,26 @@ function applyPunchClientInfo(invoice, punch) {
   };
 }
 
-export function buildInvoicesFromPunches({ punches = [], invoices = [], taxes = [] }) {
+function findWorker(workers = [], workerId = "owner") {
+  return workers.find((worker) => worker.id === workerId) || workers.find((worker) => worker.id === "owner") || workers[0] || null;
+}
+
+function makeWorkerInvoiceNumber(worker, invoices = []) {
+  const prefix = worker?.invoicePrefix || "WRK";
+  const manualNext = Number(worker?.nextInvoiceNumber || 1);
+  const count = invoices.filter((invoice) => invoice.workerId === worker?.id).length;
+  const next = Math.max(manualNext, count + 1);
+  return `${prefix}-${String(next).padStart(4, "0")}`;
+}
+
+export function buildInvoicesFromPunches({ punches = [], invoices = [], taxes = [], workers = [] }) {
   let nextInvoices = [...invoices];
   const updatedPunches = punches.map((punch) => ({ ...punch }));
 
   updatedPunches.forEach((punch) => {
     if (punch.invoiceStatus && punch.invoiceStatus !== "not_invoiced") return;
 
+    const worker = findWorker(workers, punch.workerId);
     const groupKey = getInvoiceGroupKey(punch);
     const existingIndex = nextInvoices.findIndex((invoice) => invoice.groupKey === groupKey && invoice.status === INVOICE_STATUSES.OPEN);
     const line = createInvoiceLineFromPunch(punch);
@@ -95,9 +105,14 @@ export function buildInvoicesFromPunches({ punches = [], invoices = [], taxes = 
     const invoice = recalculateInvoice(
       {
         id: invoiceId,
-        invoiceNumber: `EPI-${new Date().getFullYear()}-${String(nextInvoices.length + 1).padStart(4, "0")}`,
+        invoiceNumber: makeWorkerInvoiceNumber(worker, nextInvoices),
         groupKey,
         status: INVOICE_STATUSES.OPEN,
+        workerId: punch.workerId || "owner",
+        workerName: punch.workerName || worker?.name || "Worker",
+        workerSignatureDataUrl: worker?.signatureDataUrl || "",
+        workerSignatureDate: worker?.signatureDate || "",
+        workerWatermarkName: punch.workerName || worker?.name || "Worker",
         clientId: punch.clientId || "",
         clientName: punch.clientName || "No client",
         clientPhone: punch.clientPhone || "",
