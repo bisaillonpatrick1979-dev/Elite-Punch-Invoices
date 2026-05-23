@@ -1,8 +1,6 @@
 import { useMemo, useState } from "react";
 
 import AppStatus from "./components/AppStatus.jsx";
-import { useAppData } from "./context/AppDataContext.jsx";
-import { useSession } from "./context/SessionContext.jsx";
 import { readLocalValue, writeLocalValue } from "./db/storage.js";
 import { getTranslations } from "./i18n/index.js";
 
@@ -16,15 +14,16 @@ import Payroll from "./modules/payroll/Payroll.jsx";
 import Catalog from "./modules/catalog/Catalog.jsx";
 import Accounting from "./modules/accounting/Accounting.jsx";
 import Settings from "./modules/settings/Settings.jsx";
+import { useSession } from "./context/SessionContext.jsx";
 
 const allTabs = [
   { id: "dashboard", icon: "⌂", component: Dashboard, roles: ["owner", "worker"] },
   { id: "punch", icon: "⏱", component: Punch, roles: ["owner", "worker"] },
   { id: "calendar", icon: "▣", component: Calendar, roles: ["owner", "worker"] },
+  { id: "payroll", icon: "$", component: Payroll, roles: ["owner", "worker"] },
   { id: "invoices", icon: "▤", component: Invoices, roles: ["owner"] },
   { id: "clients", icon: "◇", component: Clients, roles: ["owner"] },
   { id: "employees", icon: "👷", component: Employees, roles: ["owner"] },
-  { id: "payroll", icon: "$", component: Payroll, roles: ["owner", "worker"] },
   { id: "catalog", icon: "◫", component: Catalog, roles: ["owner"] },
   { id: "accounting", icon: "▦", component: Accounting, roles: ["owner"] },
   { id: "settings", icon: "⚙", component: Settings, roles: ["owner"] }
@@ -37,15 +36,13 @@ const themes = [
 ];
 
 export default function App() {
-  const { appData } = useAppData();
-  const { mode, workerId, setMode, setWorkerId } = useSession();
+  const { mode } = useSession();
   const [activeTab, setActiveTab] = useState("dashboard");
   const [theme, setThemeState] = useState(() => readLocalValue("theme", "carbon-gold"));
   const [language, setLanguageState] = useState(() => readLocalValue("language", "fr"));
   const t = useMemo(() => getTranslations(language), [language]);
   const tabs = useMemo(() => allTabs.filter((tab) => tab.roles.includes(mode)), [mode]);
   const currentTab = useMemo(() => tabs.find((tab) => tab.id === activeTab) || tabs[0], [activeTab, tabs]);
-  const workers = appData.workers || [];
 
   const setTheme = (nextTheme) => {
     setThemeState(nextTheme);
@@ -57,24 +54,17 @@ export default function App() {
     writeLocalValue("language", nextLanguage);
   };
 
-  const changeMode = (nextMode) => {
-    setMode(nextMode);
-    setActiveTab("dashboard");
-  };
-
   const ActiveComponent = currentTab.component;
   const currentLabel = t.tabs[currentTab.id] || currentTab.id;
 
   return (
     <div className="app-shell" data-theme={theme}>
-      <header className="app-header">
+      <header className="app-header clean-header">
         <div>
-          <p className="eyebrow">{t.appName}</p>
+          <p className="eyebrow">Elite Punch Invoice</p>
           <h1>{currentLabel}</h1>
         </div>
-        <div className="top-controls">
-          <label className="theme-picker"><span>Mode</span><select value={mode} onChange={(event) => changeMode(event.target.value)}><option value="owner">Owner</option><option value="worker">Worker</option></select></label>
-          {mode === "worker" && <label className="theme-picker"><span>Worker</span><select value={workerId} onChange={(event) => setWorkerId(event.target.value)}>{workers.map((worker) => <option key={worker.id} value={worker.id}>{worker.name}</option>)}</select></label>}
+        <div className="top-controls compact-controls">
           <label className="theme-picker"><span>{t.language}</span><select value={language} onChange={(event) => setLanguage(event.target.value)}><option value="fr">FR</option><option value="en">EN</option></select></label>
           <label className="theme-picker"><span>{t.theme}</span><select value={theme} onChange={(event) => setTheme(event.target.value)}>{themes.map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}</select></label>
         </div>
@@ -85,7 +75,7 @@ export default function App() {
         <ActiveComponent t={t} language={language} />
       </main>
 
-      <nav className="bottom-tabs" aria-label="Navigation principale">
+      <nav className="bottom-tabs scroll-tabs" aria-label="Navigation principale">
         {tabs.map((tab) => {
           const isActive = tab.id === currentTab.id;
           const label = t.tabs[tab.id] || tab.id;
