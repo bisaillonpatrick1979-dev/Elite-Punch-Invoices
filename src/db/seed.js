@@ -9,6 +9,7 @@ export const initialSettings = {
   region: "Alberta",
   timeZone: "America/Edmonton",
   theme: "carbon-gold",
+  onboardingDone: false,
   ownerKey: DEFAULT_PIN,
   taxProfile: DEFAULT_TAX_PROFILE,
   measurementSystem: { length: "feet-inches", area: "square-feet", linear: "linear-feet" },
