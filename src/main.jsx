@@ -15,6 +15,7 @@ import "./styles/navigation.css";
 import "./styles/status.css";
 import "./styles/dialog.css";
 import "./styles/premium-animations.css";
+import "./styles/hud-neon.css";
 import "../public/premium-materials.css";
 import "../public/premium-punch.css";
 import "../public/premium-invoices.css";
