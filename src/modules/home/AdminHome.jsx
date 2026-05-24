@@ -7,13 +7,13 @@ import { formatMoney } from "../../utils/money.js";
 const weekLabels = ["DI", "LU", "MA", "ME", "JE", "VE", "SA"];
 const monthLabels = ["JANVIER", "FÉVRIER", "MARS", "AVRIL", "MAI", "JUIN", "JUILLET", "AOÛT", "SEPTEMBRE", "OCTOBRE", "NOVEMBRE", "DÉCEMBRE"];
 const legendItems = [
-  { className: "off", icon: "○", label: "Congé", range: "0 h" },
-  { className: "tiny", icon: "🌱", label: "Très petite", range: "2–4 h" },
-  { className: "small", icon: "🔹", label: "Petite", range: "4–6 h" },
-  { className: "normal", icon: "✅", label: "Normale", range: "6–8 h" },
+  { className: "off", icon: "🏖️", label: "Congé", range: "0 h" },
+  { className: "tiny", icon: "🍃", label: "Très petite", range: "2–4 h" },
+  { className: "small", icon: "👟", label: "Petite", range: "4–6 h" },
+  { className: "normal", icon: "🧳", label: "Normale", range: "6–8 h" },
   { className: "big", icon: "💪", label: "Assez grosse", range: "8–10 h" },
-  { className: "very-big", icon: "🔥", label: "Grosse", range: "10–12 h" },
-  { className: "explosive", icon: "⚡", label: "Explosive", range: "12 h+" }
+  { className: "very-big", icon: "📈", label: "Grosse", range: "10–12 h" },
+  { className: "explosive", icon: "🎯", label: "Explosive", range: "12 h+" }
 ];
 
 function sum(values = []) { return values.reduce((total, value) => total + Number(value || 0), 0); }
@@ -21,7 +21,6 @@ function todayKey(date = new Date()) { return date.toISOString().slice(0, 10); }
 function getBreakSeconds(breaks = [], nowISO = new Date().toISOString()) { return breaks.reduce((total, item) => total + secondsBetween(item.startedAt, item.endedAt || nowISO), 0); }
 function getWorkedSeconds(activePunch, nowISO = new Date().toISOString()) { if (!activePunch) return 0; return Math.max(0, secondsBetween(activePunch.startedAt, nowISO) - getBreakSeconds(activePunch.breaks || [], nowISO)); }
 function getDayClass(hours = 0) { if (!hours || hours <= 0) return "off"; if (hours >= 12) return "explosive"; if (hours >= 10) return "very-big"; if (hours >= 8) return "big"; if (hours >= 6) return "normal"; if (hours >= 4) return "small"; return "tiny"; }
-
 function buildCalendarCells(punches, visibleDate) {
   const year = visibleDate.getFullYear();
   const month = visibleDate.getMonth();
@@ -45,14 +44,11 @@ export default function AdminHome({ onNavigate }) {
   const nowISO = now.toISOString();
   const workedSeconds = getWorkedSeconds(activePunch, nowISO);
   const cells = useMemo(() => buildCalendarCells(punches, now), [punches, now]);
-
   useEffect(() => { const timer = window.setInterval(() => setNow(new Date()), 1000); return () => window.clearInterval(timer); }, []);
-
   const summary = useMemo(() => { const todayPunches = punches.filter((punch) => punch.startedAt?.slice(0, 10) === todayKey()); return { todayAmount: sum(todayPunches.map((punch) => punch.amount)), todayHours: sum(todayPunches.map((punch) => punch.workedHours)), todayPunchCount: todayPunches.length, activeWorkerCount: workers.length }; }, [punches, workers]);
   const statusText = activePunch ? (activePunch.currentBreakStartedAt ? "EN PAUSE" : "EN SERVICE") : "PRÊT À POINTER";
   const monthTitle = `${monthLabels[now.getMonth()]} ${now.getFullYear()}`;
   const currentKey = todayKey(now);
-
   return (
     <section className="module-page chantier-home">
       <div className="chantier-brand-row"><div className="chantier-brand-lockup"><div className="chantier-gem">◆</div><div><span>ELITE PUNCH</span><strong>INVOICE</strong></div></div><button className="chantier-mode-pill" type="button" onClick={() => onNavigate?.("settings")}>ADMIN</button></div>
