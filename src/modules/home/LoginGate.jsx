@@ -2,6 +2,10 @@ import { useState } from "react";
 
 import { DEFAULT_KEY_VALUE, matchKey } from "../../utils/entry.js";
 
+function fourDigitPin(value) {
+  return String(value || "").replace(/\D/g, "").slice(0, 4);
+}
+
 export default function LoginGate({ settings, workers, loginOwner, loginWorker }) {
   const [ownerInput, setOwnerInput] = useState("");
   const [workerInputs, setWorkerInputs] = useState({});
@@ -35,9 +39,9 @@ export default function LoginGate({ settings, workers, loginOwner, loginWorker }
       <div className="info-card login-person-card">
         <div className="login-avatar">A</div>
         <div><span className="status-pill">Admin</span><h2>{t("Admin / Propriétaire", "Admin / Owner")}</h2><p>{t("Accès complet.", "Full access.")}</p></div>
-        <div className="login-pin-area"><input inputMode="numeric" type="password" value={ownerInput} onChange={(event) => setOwnerInput(event.target.value)} placeholder="PIN" /><button className="primary-action" type="button" onClick={enterOwner}>{t("Entrer", "Enter")}</button></div>
+        <div className="login-pin-area"><input inputMode="numeric" pattern="[0-9]*" maxLength="4" type="password" value={ownerInput} onChange={(event) => setOwnerInput(fourDigitPin(event.target.value))} placeholder="PIN" /><button className="primary-action" type="button" onClick={enterOwner}>{t("Entrer", "Enter")}</button></div>
       </div>
-      <div className="info-card"><h2>{t("Travailleurs", "Workers")}</h2>{workers.length === 0 ? <div className="list-item"><strong>{t("Aucun travailleur créé", "No worker created")}</strong><span>{t("Entre Admin pour créer les travailleurs.", "Enter Admin to create workers.")}</span></div> : <div className="worker-login-grid premium-worker-grid">{workers.map((worker) => <div className="worker-login-card premium-worker-card" key={worker.id}><div className="login-avatar small-avatar">{worker.name?.slice(0, 1).toUpperCase() || "W"}</div><strong>{worker.name}</strong><span>{worker.role || "worker"}</span><input inputMode="numeric" type="password" value={workerInputs[worker.id] || ""} onChange={(event) => setWorkerInputs((current) => ({ ...current, [worker.id]: event.target.value }))} placeholder="PIN" /><button className="secondary-action" type="button" onClick={() => enterWorker(worker)}>{t("Entrer", "Enter")}</button></div>)}</div>}</div>
+      <div className="info-card"><h2>{t("Travailleurs", "Workers")}</h2>{workers.length === 0 ? <div className="list-item"><strong>{t("Aucun travailleur créé", "No worker created")}</strong><span>{t("Entre Admin pour créer les travailleurs.", "Enter Admin to create workers.")}</span></div> : <div className="worker-login-grid premium-worker-grid">{workers.map((worker) => <div className="worker-login-card premium-worker-card" key={worker.id}><div className="login-avatar small-avatar">{worker.name?.slice(0, 1).toUpperCase() || "W"}</div><strong>{worker.name}</strong><span>{worker.role || "worker"}</span><input inputMode="numeric" pattern="[0-9]*" maxLength="4" type="password" value={workerInputs[worker.id] || ""} onChange={(event) => setWorkerInputs((current) => ({ ...current, [worker.id]: fourDigitPin(event.target.value) }))} placeholder="PIN" /><button className="secondary-action" type="button" onClick={() => enterWorker(worker)}>{t("Entrer", "Enter")}</button></div>)}</div>}</div>
     </section>
   );
 }
