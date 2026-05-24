@@ -11,6 +11,12 @@ export const initialSettings = {
   theme: "carbon-gold",
   onboardingDone: false,
   ownerKey: DEFAULT_PIN,
+  storagePermissionGranted: false,
+  storageMode: "local",
+  cloudProvider: "none",
+  cloudRootFolder: "Elite Punch Invoice",
+  cloudStructureReady: false,
+  lastBackupAt: "",
   taxProfile: DEFAULT_TAX_PROFILE,
   measurementSystem: { length: "feet-inches", area: "square-feet", linear: "linear-feet" },
   billingProfile: {
