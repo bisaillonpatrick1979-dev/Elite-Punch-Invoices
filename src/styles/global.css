@@ -47,7 +47,6 @@ button {
   margin-bottom: 18px;
 }
 
-/* Contrast emergency patch: keeps the premium style but makes text readable. */
 .app-shell .theme-picker span,
 .app-shell .eyebrow,
 .app-shell .status-pill,
@@ -79,4 +78,46 @@ button {
   color: #140f05 !important;
   background:
     linear-gradient(135deg, #fff1a8 0%, #ffd15d 42%, #b87613 100%) !important;
+}
+
+.app-shell .settings-shortcut-card {
+  border-color: color-mix(in srgb, var(--border) 70%, var(--primary-strong) 30%) !important;
+  background: linear-gradient(145deg, color-mix(in srgb, var(--surface) 90%, transparent), color-mix(in srgb, var(--surface-strong) 84%, transparent)) !important;
+  color: var(--text) !important;
+}
+
+.app-shell .settings-shortcut-card span {
+  color: var(--primary-strong) !important;
+}
+
+.app-shell .settings-shortcut-card strong {
+  color: var(--text) !important;
+}
+
+.app-shell .settings-shortcut-card small {
+  color: var(--muted) !important;
+}
+
+.chantier-legend-grid.full-legend {
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+}
+
+.chantier-legend-grid.full-legend span {
+  min-height: 44px;
+  gap: 10px;
+}
+
+.legend-gif {
+  display: inline-grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--primary-strong) 14%, transparent);
+}
+
+@media (max-width: 430px) {
+  .chantier-legend-grid.full-legend {
+    grid-template-columns: 1fr !important;
+  }
 }
