@@ -147,6 +147,60 @@ button {
   color: var(--text) !important;
 }
 
+/* Onboarding: language and province cards were black-on-black on some browsers. */
+.app-shell .onboarding-choice-card,
+.app-shell .choice-grid,
+.app-shell .province-grid {
+  color: var(--text) !important;
+}
+
+.app-shell .choice-card,
+.app-shell button.choice-card {
+  color: var(--text) !important;
+  background:
+    linear-gradient(145deg, color-mix(in srgb, var(--surface-strong) 92%, #000 8%), color-mix(in srgb, var(--surface) 86%, #000 14%)) !important;
+  border: 1px solid color-mix(in srgb, var(--border) 58%, var(--text) 20%) !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.78) !important;
+}
+
+.app-shell .choice-card strong,
+.app-shell .choice-card span,
+.app-shell button.choice-card strong,
+.app-shell button.choice-card span {
+  color: var(--text) !important;
+  opacity: 1 !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.82) !important;
+}
+
+.app-shell .choice-card.active,
+.app-shell button.choice-card.active {
+  color: #120d04 !important;
+  background:
+    linear-gradient(135deg, #fff0a0 0%, #ffd15d 48%, #b87613 100%) !important;
+  border-color: rgba(255, 238, 160, 0.9) !important;
+  box-shadow:
+    0 16px 38px rgba(255, 193, 57, 0.22),
+    inset 0 1px 0 rgba(255, 255, 255, 0.55) !important;
+}
+
+.app-shell .choice-card.active strong,
+.app-shell .choice-card.active span,
+.app-shell button.choice-card.active strong,
+.app-shell button.choice-card.active span {
+  color: #120d04 !important;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.35) !important;
+}
+
+.app-shell .onboarding-choice-card .primary-action,
+.app-shell .onboarding-choice-card .secondary-action {
+  color: #120d04 !important;
+  text-shadow: none !important;
+}
+
+.app-shell .onboarding-choice-card .secondary-action {
+  color: var(--text) !important;
+}
+
 @media (max-width: 520px) {
   .app-shell .theme-picker {
     min-width: 120px;
