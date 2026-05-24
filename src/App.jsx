@@ -23,13 +23,13 @@ import WorkerInvoices from "./modules/worker/WorkerInvoices.jsx";
 
 const allTabs = [
   { id: "dashboard", icon: "⌂", component: HomeRouter, roles: ["owner", "worker"], showInNav: true },
-  { id: "punch", icon: "⏱", component: Punch, roles: ["owner", "worker"], showInNav: true },
   { id: "calendar", icon: "▣", component: Calendar, roles: ["owner", "worker"], showInNav: true },
   { id: "invoices", icon: "▤", component: Invoices, roles: ["owner"], showInNav: true },
   { id: "settings", icon: "⚙", component: Settings, roles: ["owner"], showInNav: true },
   { id: "workerInvoices", icon: "▤", component: WorkerInvoices, roles: ["worker"], showInNav: true },
   { id: "workerOptions", icon: "⚙", component: WorkerOptions, roles: ["worker"], showInNav: true },
 
+  { id: "punch", icon: "⏱", component: Punch, roles: ["owner", "worker"], showInNav: false },
   { id: "payroll", icon: "$", component: Payroll, roles: ["owner", "worker"], showInNav: false },
   { id: "clients", icon: "◇", component: Clients, roles: ["owner"], showInNav: false },
   { id: "employees", icon: "👷", component: Employees, roles: ["owner"], showInNav: false },
@@ -55,7 +55,7 @@ const themes = [
 
 function getTabLabel(tab, t) {
   if (tab.id === "dashboard") return "Accueil";
-  if (tab.id === "punch") return "Punch / Paye";
+  if (tab.id === "punch") return "Punch";
   if (tab.id === "payroll") return "Payes";
   if (tab.id === "workerOptions") return "Options";
   if (tab.id === "workerInvoices") return "Factures";
