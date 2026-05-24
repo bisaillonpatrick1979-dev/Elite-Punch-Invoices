@@ -1,39 +1,122 @@
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { useAppData } from "../../context/AppDataContext.jsx";
 import { useSession } from "../../context/SessionContext.jsx";
-import { formatDate } from "../../utils/dates.js";
+import { secondsBetween, secondsToClock } from "../../utils/dates.js";
 import { formatMoney } from "../../utils/money.js";
 
+const weekLabels = ["DI", "LU", "MA", "ME", "JE", "VE", "SA"];
+const monthLabels = ["JANVIER", "FÉVRIER", "MARS", "AVRIL", "MAI", "JUIN", "JUILLET", "AOÛT", "SEPTEMBRE", "OCTOBRE", "NOVEMBRE", "DÉCEMBRE"];
+
 function sum(values = []) { return values.reduce((total, value) => total + Number(value || 0), 0); }
-function todayKey() { return new Date().toISOString().slice(0, 10); }
+function todayKey(date = new Date()) { return date.toISOString().slice(0, 10); }
+function getBreakSeconds(breaks = [], nowISO = new Date().toISOString()) { return breaks.reduce((total, item) => total + secondsBetween(item.startedAt, item.endedAt || nowISO), 0); }
+function getWorkedSeconds(activePunch, nowISO = new Date().toISOString()) { if (!activePunch) return 0; return Math.max(0, secondsBetween(activePunch.startedAt, nowISO) - getBreakSeconds(activePunch.breaks || [], nowISO)); }
+function getDayClass(hours = 0) { if (hours >= 10) return "very-big"; if (hours >= 8) return "big"; if (hours >= 6) return "normal"; if (hours > 0) return "small"; return "off"; }
+function buildCalendarCells(punches, visibleDate) {
+  const year = visibleDate.getFullYear();
+  const month = visibleDate.getMonth();
+  const firstDay = new Date(year, month, 1);
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const leading = firstDay.getDay();
+  const totalCells = Math.ceil((leading + daysInMonth) / 7) * 7;
+  const stats = new Map();
+  punches.forEach((punch) => {
+    const key = punch.startedAt?.slice(0, 10);
+    if (!key) return;
+    const item = stats.get(key) || { hours: 0, amount: 0 };
+    item.hours += Number(punch.workedHours || 0);
+    item.amount += Number(punch.amount || 0);
+    stats.set(key, item);
+  });
+  return Array.from({ length: totalCells }, (_, index) => {
+    const day = index - leading + 1;
+    if (day < 1 || day > daysInMonth) return null;
+    const dateKey = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+    const dayStats = stats.get(dateKey) || { hours: 0, amount: 0 };
+    return { day, dateKey, ...dayStats, className: getDayClass(dayStats.hours) };
+  });
+}
 
 export default function WorkerHome({ onNavigate }) {
   const { appData } = useAppData();
   const { workerId } = useSession();
+  const [now, setNow] = useState(() => new Date());
   const settings = appData.settings || {};
   const worker = (appData.workers || []).find((item) => item.id === workerId);
   const activePunch = appData.activePunch?.workerId === workerId ? appData.activePunch : null;
   const punches = useMemo(() => (appData.punches || []).filter((punch) => punch.workerId === workerId), [appData.punches, workerId]);
-  const invoices = useMemo(() => (appData.invoices || []).filter((invoice) => invoice.workerId === workerId), [appData.invoices, workerId]);
   const money = (value) => formatMoney(value, settings.currency || "CAD", settings.locale || "fr-CA");
+  const nowISO = now.toISOString();
+  const workedSeconds = getWorkedSeconds(activePunch, nowISO);
+  const cells = useMemo(() => buildCalendarCells(punches, now), [punches, now]);
+
+  useEffect(() => { const timer = window.setInterval(() => setNow(new Date()), 1000); return () => window.clearInterval(timer); }, []);
 
   const summary = useMemo(() => {
-    const unpaidPunches = punches.filter((punch) => punch.payrollStatus !== "paid");
     const todayPunches = punches.filter((punch) => punch.startedAt?.slice(0, 10) === todayKey());
-    return { earned: sum(punches.map((punch) => punch.amount)), todayAmount: sum(todayPunches.map((punch) => punch.amount)), unpaid: sum(unpaidPunches.map((punch) => punch.amount)), punchCount: punches.length, todayPunchCount: todayPunches.length, invoiceCount: invoices.length, workedHours: sum(punches.map((punch) => punch.workedHours)), todayHours: sum(todayPunches.map((punch) => punch.workedHours)), openInvoices: invoices.filter((invoice) => invoice.status === "open" || invoice.status === "ready").length };
-  }, [punches, invoices]);
+    const unpaidPunches = punches.filter((punch) => punch.payrollStatus !== "paid");
+    return { todayAmount: sum(todayPunches.map((punch) => punch.amount)), todayHours: sum(todayPunches.map((punch) => punch.workedHours)), unpaid: sum(unpaidPunches.map((punch) => punch.amount)), todayPunchCount: todayPunches.length };
+  }, [punches]);
 
-  const recentPunches = punches.slice(0, 4);
-  const recentInvoices = invoices.slice(0, 4);
+  const statusText = activePunch ? (activePunch.currentBreakStartedAt ? "EN PAUSE" : "EN SERVICE") : "PRÊT À POINTER";
+  const monthTitle = `${monthLabels[now.getMonth()]} ${now.getFullYear()}`;
+  const currentKey = todayKey(now);
 
   return (
-    <section className="module-page home-workspace premium-home worker-premium-home">
-      <div className="hero-card home-hero-premium"><div><span className="status-pill">Employé</span><h2>{worker?.name || "Accueil employé"}</h2><p>Ton espace rapide : punch, heures, paye, factures et dernières sessions.</p><div className="action-row"><button className="secondary-action" type="button" onClick={() => onNavigate?.("punch")}>Ouvrir Punch</button><button className="secondary-action" type="button" onClick={() => onNavigate?.("calendar")}>Mon calendrier</button><button className="secondary-action" type="button" onClick={() => onNavigate?.("workerInvoices")}>Mes factures</button></div></div><div className="home-orb-panel"><span className="orb-label">Aujourd’hui</span><strong>{money(summary.todayAmount)}</strong><small>{summary.todayHours.toFixed(2)} h · {summary.todayPunchCount} session(s)</small></div></div>
-      <div className="home-command-grid"><div className="info-card command-card punch-command"><span className="status-pill">Punch</span><h2>{activePunch ? "Punch actif" : "Prêt à travailler"}</h2><p>{activePunch ? `${activePunch.clientName || activePunch.jobName || "Job"} · ${activePunch.payType}` : "Ouvre l’onglet Punch pour commencer, choisir heure/pi²/job et entrer le taux."}</p><div className="action-row"><button className="primary-action punch-orb mini-orb" type="button" onClick={() => onNavigate?.("punch")}>⏱</button></div></div><div className="info-card command-card"><h2>Paye impayée</h2><p className="dashboard-number">{money(summary.unpaid)}</p><div className="mini-stats"><span>{summary.workedHours.toFixed(2)} h total</span><span>{summary.punchCount} punches</span></div><div className="action-row"><button className="secondary-action" type="button" onClick={() => onNavigate?.("payroll")}>Voir paye</button></div></div><div className="info-card command-card"><h2>Mes factures</h2><p className="dashboard-number">{summary.invoiceCount}</p><div className="mini-stats"><span>{summary.openInvoices} ouvertes</span><span>signature par facture</span></div><div className="action-row"><button className="secondary-action" type="button" onClick={() => onNavigate?.("workerInvoices")}>Ouvrir factures</button></div></div></div>
-      <div className="section-divider" />
-      <div className="card-grid"><div className="stat-card"><h3>Mes gains</h3><p>{money(summary.earned)}</p></div><div className="stat-card"><h3>Ma paye impayée</h3><p>{money(summary.unpaid)}</p></div><div className="stat-card"><h3>Mes heures</h3><p>{summary.workedHours.toFixed(2)} h</p></div><div className="stat-card"><h3>Mes factures</h3><p>{summary.invoiceCount}</p></div></div>
-      <div className="home-split-grid"><div className="info-card"><h2>Mes dernières sessions</h2>{recentPunches.length === 0 ? <p>Aucune session encore.</p> : <div className="simple-list">{recentPunches.map((punch) => <button className="list-item clickable-list-item" type="button" onClick={() => onNavigate?.("calendar")} key={punch.id}><strong>{punch.clientName || "No client"}</strong><span>{formatDate(punch.startedAt, settings.locale, settings.timeZone)} · {Number(punch.workedHours || 0).toFixed(2)} h · {money(punch.amount || 0)}</span><span>{punch.invoiceStatus || "not_invoiced"}</span></button>)}</div>}</div><div className="info-card"><h2>Mes factures récentes</h2>{recentInvoices.length === 0 ? <p>Aucune facture à ton nom pour l’instant.</p> : <div className="simple-list">{recentInvoices.map((invoice) => <button className="list-item clickable-list-item" type="button" onClick={() => onNavigate?.("workerInvoices")} key={invoice.id}><strong>{invoice.invoiceNumber}</strong><span>{invoice.clientName || "No client"} · {invoice.status}</span><span>{money(invoice.totals?.total || 0)}</span></button>)}</div>}</div></div>
+    <section className="module-page chantier-home worker-chantier-home">
+      <div className="chantier-brand-row">
+        <div className="chantier-brand-lockup">
+          <div className="chantier-gem">◆</div>
+          <div><span>{worker?.name || "EMPLOYÉ"}</span><strong>ESPACE PUNCH</strong></div>
+        </div>
+        <button className="chantier-mode-pill" type="button" onClick={() => onNavigate?.("workerOptions")}>EMPLOYÉ</button>
+      </div>
+
+      <div className="chantier-readout-grid">
+        <button className="chantier-readout money" type="button" onClick={() => onNavigate?.("payroll")}>
+          <span>REVENU AUJOURD’HUI</span>
+          <strong>{money(summary.todayAmount)}</strong>
+          <small>{summary.todayHours.toFixed(2)} h · {summary.todayPunchCount} session(s)</small>
+        </button>
+        <button className="chantier-readout time" type="button" onClick={() => onNavigate?.("punch")}>
+          <span>{activePunch ? activePunch.clientName || activePunch.jobName || "JOB" : "STATUT"}</span>
+          <strong>{activePunch ? secondsToClock(workedSeconds) : "00:00:00"}</strong>
+          <small>● {statusText}</small>
+        </button>
+      </div>
+
+      <div className="chantier-punch-stage">
+        <button className={activePunch ? "chantier-punch-main active" : "chantier-punch-main"} type="button" onClick={() => onNavigate?.("punch")}>
+          <span className="chantier-punch-icon">◉</span>
+          <strong>{activePunch ? "OUVRIR PUNCH" : "PUNCH IN"}</strong>
+          <small>{activePunch ? "Session active" : "Démarrer ma journée"}</small>
+        </button>
+        <div className="chantier-ready-pill"><span />{statusText}</div>
+      </div>
+
+      <div className="chantier-calendar-panel">
+        <div className="chantier-calendar-title">
+          <button type="button" onClick={() => onNavigate?.("calendar")}>‹</button>
+          <h2>{monthTitle}</h2>
+          <button type="button" onClick={() => onNavigate?.("calendar")}>›</button>
+        </div>
+        <div className="chantier-calendar-weekdays">{weekLabels.map((label) => <span key={label}>{label}</span>)}</div>
+        <div className="chantier-calendar-grid">
+          {cells.map((cell, index) => cell ? (
+            <button className={`chantier-day ${cell.className} ${cell.dateKey === currentKey ? "today" : ""}`} key={cell.dateKey} type="button" onClick={() => onNavigate?.("calendar")}>
+              <span>{cell.day}</span>{cell.hours > 0 && <small>✓</small>}
+            </button>
+          ) : <div className="chantier-day empty" key={`empty-${index}`} />)}
+        </div>
+      </div>
+
+      <div className="chantier-legend-panel">
+        <h3>◆ LÉGENDE ◆</h3>
+        <div className="chantier-legend-grid">
+          <span className="off">◇ Congé</span><span className="small">◐ Petite j.</span><span className="normal">✓ Normale</span><span className="big">🔥 Grosse j.</span><span className="very-big">◆ Très grosse</span>
+        </div>
+      </div>
     </section>
   );
 }
