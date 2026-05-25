@@ -24,6 +24,7 @@ const statusesKeepingSentDate = [
 ];
 
 const emptyManualInvoice = {
+  clientId: "",
   clientName: "",
   jobAddress: "",
   clientPhone: "",
@@ -116,6 +117,8 @@ export default function Invoices() {
   const settings = appData.settings || {};
   const invoices = appData.invoices || [];
   const punches = appData.punches || [];
+  const clients = appData.clients || [];
+  const activeClients = clients.filter((client) => client.active !== false);
   const catalogItems = (appData.catalogItems || []).filter((item) => item.active !== false);
   const uninvoicedPunches = punches.filter((punch) => !punch.invoiceStatus || punch.invoiceStatus === "not_invoiced");
   const selectedInvoice = useMemo(() => invoices.find((invoice) => invoice.id === selectedInvoiceId) || null, [invoices, selectedInvoiceId]);
@@ -123,6 +126,25 @@ export default function Invoices() {
   const recalc = (invoice, currentData) => recalculateInvoice(invoice, currentData.settings?.taxProfile?.taxes || []);
   const moneyForInvoice = (invoice, value) => formatMoney(value, invoice.currency || settings.currency || "CAD", settings.locale || "fr-CA");
   const findPunch = (line) => punches.find((punch) => punch.id === line?.sourceId);
+
+  const selectManualClient = (clientId) => {
+    if (!clientId) {
+      setManualInvoice((current) => ({ ...current, clientId: "" }));
+      return;
+    }
+
+    const client = clients.find((item) => item.id === clientId);
+    if (!client) return;
+
+    setManualInvoice((current) => ({
+      ...current,
+      clientId: client.id,
+      clientName: client.name || "",
+      clientPhone: client.phone || "",
+      clientEmail: client.email || "",
+      jobAddress: client.civicAddress || current.jobAddress || ""
+    }));
+  };
 
   const createOrUpdateOpenInvoices = () => {
     updateAppData((currentData) => {
@@ -187,7 +209,7 @@ export default function Invoices() {
     const jobAddress = manualInvoice.jobAddress.trim() || "No address";
     updateAppData((currentData) => {
       const invoiceId = `invoice-${Date.now()}`;
-      const invoice = recalc({ id: invoiceId, invoiceNumber: `EPI-${new Date().getFullYear()}-${String((currentData.invoices || []).length + 1).padStart(4, "0")}`, groupKey: `manual|${invoiceId}`, status: INVOICE_STATUSES.OPEN, clientId: "", clientName, clientPhone: manualInvoice.clientPhone.trim(), clientEmail: manualInvoice.clientEmail.trim(), jobAddress, currency: currentData.settings?.currency || "CAD", createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), lines: [], taxEnabled: true, discountEnabled: false, discountType: "amount", discountValue: 0, discountAmount: 0, advanceEnabled: false, advanceAmount: 0, paidAmount: 0, notes: manualInvoice.notes.trim() }, currentData);
+      const invoice = recalc({ id: invoiceId, invoiceNumber: `EPI-${new Date().getFullYear()}-${String((currentData.invoices || []).length + 1).padStart(4, "0")}`, groupKey: `manual|${invoiceId}`, status: INVOICE_STATUSES.OPEN, clientId: manualInvoice.clientId || "", clientName, clientPhone: manualInvoice.clientPhone.trim(), clientEmail: manualInvoice.clientEmail.trim(), jobAddress, currency: currentData.settings?.currency || "CAD", createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), lines: [], taxEnabled: true, discountEnabled: false, discountType: "amount", discountValue: 0, discountAmount: 0, advanceEnabled: false, advanceAmount: 0, paidAmount: 0, notes: manualInvoice.notes.trim() }, currentData);
       return { ...currentData, invoices: [invoice, ...(currentData.invoices || [])] };
     });
     setManualInvoice(emptyManualInvoice);
@@ -266,7 +288,7 @@ export default function Invoices() {
     <section className="module-page">
       <div className="hero-card"><span className="status-pill">Invoices</span><h2>{selectedInvoice ? "Détail de facture" : "Factures"}</h2><p>{selectedInvoice ? "Ajoute des items, ouvre les journées de travail et prépare le PDF." : "Liste compacte des factures. Clique une carte pour ouvrir le détail complet."}</p><div className="action-row"><button className="primary-action" type="button" onClick={createOrUpdateOpenInvoices}>Add punches to invoices</button></div><div className="mini-stats"><span>{uninvoicedPunches.length} uninvoiced punches</span><span>{invoices.length} invoices</span></div></div>
       {preview && <div className="info-card"><h2>PDF Preview - {preview.invoiceNumber}</h2><iframe title={`Preview ${preview.invoiceNumber}`} src={preview.url} style={{ width: "100%", minHeight: "520px", border: "1px solid var(--border)", borderRadius: "18px", background: "white" }} /></div>}
-      {!selectedInvoice && <div className="info-card"><h2>Create manual invoice</h2><div className="form-grid"><label className="field"><span>Client name</span><input value={manualInvoice.clientName} onChange={(event) => setManualInvoice((current) => ({ ...current, clientName: event.target.value }))} /></label><label className="field"><span>Job address</span><input value={manualInvoice.jobAddress} onChange={(event) => setManualInvoice((current) => ({ ...current, jobAddress: event.target.value }))} /></label><label className="field"><span>Phone</span><input value={manualInvoice.clientPhone} onChange={(event) => setManualInvoice((current) => ({ ...current, clientPhone: event.target.value }))} /></label><label className="field"><span>Email</span><input value={manualInvoice.clientEmail} onChange={(event) => setManualInvoice((current) => ({ ...current, clientEmail: event.target.value }))} /></label><label className="field field-full"><span>Notes</span><textarea rows="3" value={manualInvoice.notes} onChange={(event) => setManualInvoice((current) => ({ ...current, notes: event.target.value }))} /></label></div><div className="action-row"><button className="secondary-action" type="button" onClick={createManualInvoice}>Create manual invoice</button></div></div>}
+      {!selectedInvoice && <div className="info-card"><h2>Create manual invoice</h2><div className="form-grid"><label className="field field-full"><span>Client existant</span><select value={manualInvoice.clientId} onChange={(event) => selectManualClient(event.target.value)}><option value="">Nouveau client / entrer manuellement</option>{activeClients.map((client) => <option key={client.id} value={client.id}>{client.name}</option>)}</select></label><label className="field"><span>Client name</span><input value={manualInvoice.clientName} onChange={(event) => setManualInvoice((current) => ({ ...current, clientId: "", clientName: event.target.value }))} /></label><label className="field"><span>Job address</span><input value={manualInvoice.jobAddress} onChange={(event) => setManualInvoice((current) => ({ ...current, jobAddress: event.target.value }))} /></label><label className="field"><span>Phone</span><input value={manualInvoice.clientPhone} onChange={(event) => setManualInvoice((current) => ({ ...current, clientPhone: event.target.value }))} /></label><label className="field"><span>Email</span><input value={manualInvoice.clientEmail} onChange={(event) => setManualInvoice((current) => ({ ...current, clientEmail: event.target.value }))} /></label><label className="field field-full"><span>Notes</span><textarea rows="3" value={manualInvoice.notes} onChange={(event) => setManualInvoice((current) => ({ ...current, notes: event.target.value }))} /></label></div><div className="action-row"><button className="secondary-action" type="button" onClick={createManualInvoice}>Create manual invoice</button></div></div>}
       {invoices.length === 0 ? <div className="info-card"><h2>No invoices yet</h2><p>Complete a punch or create a manual invoice.</p></div> : selectedInvoice ? renderInvoiceDetail(selectedInvoice) : renderInvoiceList()}
       {selectedWorkday && <WorkdayDetailModal line={selectedWorkday.line} punch={selectedWorkday.punch} invoice={selectedWorkday.invoice} money={(value) => moneyForInvoice(selectedWorkday.invoice, value)} settings={settings} onClose={() => setSelectedWorkday(null)} />}
     </section>
