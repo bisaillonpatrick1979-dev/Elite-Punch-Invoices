@@ -23,6 +23,10 @@ function getDayLabel(hours) { const info = getDayClassInfo(hours); return info.i
 function groupPunchesByDate(punches = []) { return punches.reduce((groups, punch) => { const key = punch.startedAt?.slice(0, 10); if (!key) return groups; if (!groups[key]) groups[key] = []; groups[key].push(punch); groups[key].sort((a, b) => new Date(a.startedAt).getTime() - new Date(b.startedAt).getTime()); return groups; }, {}); }
 function getMonthSummary(monthDays, punchesByDate) { const workedDays = monthDays.filter(Boolean).filter((day) => (punchesByDate[day] || []).length > 0); const punches = workedDays.flatMap((day) => punchesByDate[day] || []); const workedHours = punches.reduce((total, punch) => total + Number(punch.workedHours || 0), 0); const breakHours = punches.reduce((total, punch) => total + minutesToHours(punch.breakMinutes || 0), 0); const amount = punches.reduce((total, punch) => total + Number(punch.amount || 0), 0); return { workedDays: workedDays.length, punchCount: punches.length, workedHours, breakHours, amount }; }
 function getDaySummary(punches = []) { const workedHours = punches.reduce((total, punch) => total + Number(punch.workedHours || 0), 0); const breakHours = punches.reduce((total, punch) => total + minutesToHours(punch.breakMinutes || 0), 0); const amount = punches.reduce((total, punch) => total + Number(punch.amount || 0), 0); const clients = [...new Set(punches.map((punch) => punch.clientName || punch.jobName || "No client"))]; const invoices = [...new Set(punches.map((punch) => punch.linkedInvoiceId).filter(Boolean))]; return { workedHours, breakHours, amount, clients, invoices, sessionCount: punches.length }; }
+function getDailyTotals(punches = []) { const groups = groupPunchesByDate(punches); return Object.entries(groups).map(([date, dayPunches]) => ({ date, punches: dayPunches, hours: dayPunches.reduce((total, punch) => total + Number(punch.workedHours || 0), 0), amount: dayPunches.reduce((total, punch) => total + Number(punch.amount || 0), 0) })).filter((day) => day.hours > 0); }
+function makeEmptyCategoryCounts() { return dayClasses.reduce((counts, item) => ({ ...counts, [item.id]: 0 }), {}); }
+function getCategoryStats(dailyTotals = [], filterFn = () => true) { const counts = makeEmptyCategoryCounts(); const filtered = dailyTotals.filter(filterFn); filtered.forEach((day) => { const classId = getDayClass(day.hours); if (counts[classId] !== undefined) counts[classId] += 1; }); return { totalDays: filtered.length, counts }; }
+function getStatsForPeriods(dailyTotals = [], viewDate = new Date()) { const year = viewDate.getFullYear(); const month = viewDate.getMonth(); return { month: getCategoryStats(dailyTotals, (day) => { const date = new Date(`${day.date}T00:00:00`); return date.getFullYear() === year && date.getMonth() === month; }), year: getCategoryStats(dailyTotals, (day) => new Date(`${day.date}T00:00:00`).getFullYear() === year), lifetime: getCategoryStats(dailyTotals) }; }
 function payTypeLabel(payType) { if (payType === "square-foot") return "Pied carré / pi²"; if (payType === "fixed") return "À la job / forfait"; return "À l’heure"; }
 function getInvoiceLabel(punch, invoices = []) { const invoice = invoices.find((item) => item.id === punch.linkedInvoiceId); if (!invoice) return punch.invoiceStatus || "Non facturé"; return `${invoice.invoiceNumber} · ${invoice.status}`; }
 function paymentDetails(punch, money) { if (punch.payType === "hourly") return [{ label: "Taux horaire", value: `${money(punch.hourlyRate || 0)} / h` }]; if (punch.payType === "square-foot") return [{ label: "Quantité", value: `${Number(punch.squareFeet || 0).toFixed(2)} pi²` }, { label: "Taux", value: `${money(punch.squareFootRate || 0)} / pi²` }]; if (punch.payType === "fixed") return [{ label: "Forfait / job", value: money(punch.fixedAmount || 0) }]; return []; }
@@ -34,6 +38,31 @@ function DetailItem({ label, value, strong = false }) {
 function BreakDetails({ breaks = [], settings }) {
   if (!breaks.length) return <div className="day-empty-note">Aucune pause enregistrée.</div>;
   return <div className="day-break-list">{breaks.map((item, index) => <div className="day-break-row" key={item.id || `${item.startedAt}-${index}`}><span>Pause {index + 1}</span><strong>{formatTime(item.startedAt, settings.locale, settings.timeZone)} → {formatTime(item.endedAt, settings.locale, settings.timeZone)}</strong><em>{minutesToHours(item.minutes || 0).toFixed(2)} h</em></div>)}</div>;
+}
+
+function CalendarCategoryStats({ stats, monthTitle }) {
+  const sections = [
+    { id: "month", title: "Ce mois-ci", subtitle: monthTitle, data: stats.month },
+    { id: "year", title: "Cette année", subtitle: `${new Date().getFullYear()}`, data: stats.year },
+    { id: "lifetime", title: "Depuis le début", subtitle: "Vie de l’application", data: stats.lifetime }
+  ];
+
+  return (
+    <div className="info-card calendar-stats-card">
+      <h2>Statistiques des types de journées</h2>
+      <p className="calendar-legend-note">Compte chaque journée travaillée selon le total d’heures de cette journée.</p>
+      <div className="calendar-period-stats">
+        {sections.map((section) => (
+          <article className="day-stat-panel" key={section.id}>
+            <div className="day-stat-panel-header"><span>{section.subtitle}</span><strong>{section.title}</strong><small>{section.data.totalDays} journée(s) travaillée(s)</small></div>
+            <div className="day-stat-list">
+              {dayClasses.map((item) => <div className={`day-stat-row day-${item.id}`} key={item.id}><span>{item.emoji} {item.name}</span><strong>{section.data.counts[item.id] || 0}</strong></div>)}
+            </div>
+          </article>
+        ))}
+      </div>
+    </div>
+  );
 }
 
 function SessionCard({ punch, index, invoices, money, settings }) {
@@ -60,6 +89,8 @@ export default function Calendar() {
   const invoices = appData.invoices || [];
   const visiblePunches = useMemo(() => isOwner ? (appData.punches || []) : (appData.punches || []).filter((punch) => punch.workerId === workerId), [appData.punches, isOwner, workerId]);
   const punchesByDate = useMemo(() => groupPunchesByDate(visiblePunches), [visiblePunches]);
+  const dailyTotals = useMemo(() => getDailyTotals(visiblePunches), [visiblePunches]);
+  const dayCategoryStats = useMemo(() => getStatsForPeriods(dailyTotals, viewDate), [dailyTotals, viewDate]);
   const monthDays = useMemo(() => getMonthDays(viewDate), [viewDate]);
   const monthSummary = useMemo(() => getMonthSummary(monthDays, punchesByDate), [monthDays, punchesByDate]);
   const selectedPunches = selectedDate ? punchesByDate[selectedDate] || [] : [];
@@ -74,6 +105,7 @@ export default function Calendar() {
       <div className="hero-card"><span className="status-pill">Calendrier</span><h2>{isOwner ? "Calendrier administrateur" : "Calendrier employé"}</h2><p>{isOwner ? "Vue complète des journées, sessions, pauses, montants et factures liées pour tous les travailleurs." : "Vue personnelle de tes journées, heures, pauses, montants et statuts de facture."}</p><div className="action-row"><button className="secondary-action" type="button" onClick={() => moveMonth(-1)}>Mois précédent</button><button className="secondary-action" type="button" onClick={() => moveMonth(1)}>Mois suivant</button></div></div>
       <div className="info-card"><h2>{monthTitle}</h2><div className="mini-stats"><span>{monthSummary.workedDays} jours travaillés</span><span>{monthSummary.punchCount} sessions</span><span>{monthSummary.workedHours.toFixed(2)} h travaillées</span><span>{monthSummary.breakHours.toFixed(2)} h pauses</span><span>{money(monthSummary.amount)}</span></div></div>
       <div className="info-card calendar-legend-card"><h2>Légende des journées</h2><p className="calendar-legend-note">La journée normale est basée sur un quart standard de 8 heures. Les couleurs sont les mêmes pour le calendrier admin et le calendrier employé.</p><div className="legend-grid calendar-legend-grid">{dayClasses.map((item) => <span className={`legend-pill day-${item.id}`} key={item.id}><span className="legend-emoji">{item.emoji}</span><strong>{item.name}</strong><small>{item.range}</small></span>)}</div></div>
+      <CalendarCategoryStats stats={dayCategoryStats} monthTitle={monthTitle} />
       <div className="calendar-grid">{monthDays.map((day, index) => { if (!day) return <div className="calendar-cell muted-cell" key={`empty-${index}`} />; const punches = punchesByDate[day] || []; const hours = punches.reduce((total, punch) => total + Number(punch.workedHours || 0), 0); const amount = punches.reduce((total, punch) => total + Number(punch.amount || 0), 0); const dayClass = getDayClass(hours); const dayInfo = getDayClassInfo(hours); return <button className={`calendar-cell day-${dayClass}`} key={day} type="button" onClick={() => setSelectedDate(day)} aria-label={`${day} · ${getDayLabel(hours)}`}><strong>{Number(day.slice(-2))} <span aria-hidden="true">{dayInfo.emoji}</span></strong>{hours > 0 ? <span>{hours.toFixed(1)} h</span> : <span>Congé</span>}{punches.length > 1 && <small>{punches.length} sessions</small>}{amount > 0 && <small>{money(amount)}</small>}</button>; })}</div>
       {selectedDate && <div className="modal-backdrop"><div className="modal-card wide-modal day-detail-modal"><div className="day-modal-header"><div><span className={`status-pill day-${selectedDayInfo.id}`}>{selectedDayInfo.emoji} {selectedDayInfo.name} · {selectedDayInfo.range}</span><h2>{formatDate(selectedDate, settings.locale, settings.timeZone)}</h2></div><button className="secondary-action" type="button" onClick={() => setSelectedDate(null)}>Fermer</button></div>{selectedPunches.length === 0 ? <p className="day-empty-note">Aucun punch sauvegardé pour cette journée.</p> : <><div className="day-summary-strip"><div><span>Sessions</span><strong>{selectedSummary.sessionCount}</strong></div><div><span>Temps net</span><strong>{selectedSummary.workedHours.toFixed(2)} h</strong></div><div><span>Pauses</span><strong>{selectedSummary.breakHours.toFixed(2)} h</strong></div><div><span>Montant</span><strong>{money(selectedSummary.amount)}</strong></div></div><div className="day-session-list">{selectedPunches.map((punch, index) => <SessionCard key={punch.id} punch={punch} index={index} invoices={invoices} money={money} settings={settings} />)}</div></>}</div></div>}
     </section>
